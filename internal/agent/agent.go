@@ -69,6 +69,7 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 			fmt.Println(err)
 			return
 		}
+		defer resp.Body.Close()
 
 		fmt.Printf("response code: %d", resp.StatusCode)
 	}
@@ -94,6 +95,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 			fmt.Println(err)
 			return
 		}
+		defer resp.Body.Close()
 
 		fmt.Printf("response code: %d", resp.StatusCode)
 	}
