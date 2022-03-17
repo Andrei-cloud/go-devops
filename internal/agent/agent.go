@@ -38,7 +38,6 @@ func (a *agent) Run(ctx context.Context) {
 	for {
 		select {
 		case <-pollTicker.C:
-			fmt.Println("collecting...")
 			a.collector.Collect()
 		case <-reportTicker.C:
 			a.ReportCounter(ctx, a.collector.GetCounter())
@@ -62,16 +61,12 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 
 		req.Header.Set("Content-Type", "text/plain")
 
-		fmt.Println(req.URL.String())
-
 		resp, err := a.client.Do(req)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 		defer resp.Body.Close()
-
-		fmt.Printf("response code: %d", resp.StatusCode)
 	}
 }
 
@@ -88,15 +83,11 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 
 		req.Header.Set("Content-Type", "text/plain")
 
-		fmt.Println(req.URL.String())
-
 		resp, err := a.client.Do(req)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 		defer resp.Body.Close()
-
-		fmt.Printf("response code: %d", resp.StatusCode)
 	}
 }
