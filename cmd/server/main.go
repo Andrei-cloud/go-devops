@@ -20,6 +20,9 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/update/gauge/", handlers.Gauges(repo))
 	mux.HandleFunc("/update/counter/", handlers.Counters(repo))
+	mux.HandleFunc("/update/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotImplemented)
+	})
 
 	s := &http.Server{
 		Addr:           ":8080",
@@ -40,5 +43,5 @@ func main() {
 	if err := s.Shutdown(ctx); err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("server quit")
+	//fmt.Println("server quit")
 }
