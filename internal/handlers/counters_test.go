@@ -19,13 +19,6 @@ func TestCounters(t *testing.T) {
 		want        int
 	}{
 		{
-			name:        "test 1",
-			method:      http.MethodPost,
-			contentType: "application/json",
-			uri:         "/update/counter/PollCount/1.345",
-			want:        http.StatusBadRequest,
-		},
-		{
 			name:        "test 2",
 			method:      http.MethodGet,
 			contentType: "text/plain",
@@ -45,6 +38,20 @@ func TestCounters(t *testing.T) {
 			contentType: "text/plain",
 			uri:         "/update/counter/PollCount/345",
 			want:        http.StatusOK,
+		},
+		{
+			name:        "test 5",
+			method:      http.MethodPost,
+			contentType: "",
+			uri:         "/update/counter/testCounter/100",
+			want:        http.StatusOK,
+		},
+		{
+			name:        "test 6",
+			method:      http.MethodPost,
+			contentType: "",
+			uri:         "/update/counter/",
+			want:        http.StatusNotFound,
 		},
 	}
 	for _, tt := range tests {

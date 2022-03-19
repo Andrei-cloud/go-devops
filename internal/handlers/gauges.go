@@ -10,14 +10,14 @@ import (
 
 func Gauges(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Content-Type") != "text/plain" || r.Method != http.MethodPost {
+		if /*r.Header.Get("Content-Type") != "text/plain" || */ r.Method != http.MethodPost {
 			http.Error(w, "invalid Content-Type", http.StatusBadRequest)
 			return
 		}
 
 		params := strings.SplitN(r.URL.Path, "/", 5)
 		if len(params) != 5 || params[1] != "update" || params[2] != "gauge" {
-			http.Error(w, "invalid value", http.StatusBadRequest)
+			http.Error(w, "invalid value", http.StatusNotFound)
 			return
 		}
 		if value, err := strconv.ParseFloat(params[4], 64); err != nil {
