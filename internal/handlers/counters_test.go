@@ -56,6 +56,7 @@ func TestCounters(t *testing.T) {
 			h := Counters(repo)
 			h.ServeHTTP(w, request)
 			res := w.Result()
+			defer res.Body.Close()
 			assert.Equal(t, tt.want, res.StatusCode)
 		})
 	}
