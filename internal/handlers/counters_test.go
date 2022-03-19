@@ -53,13 +53,6 @@ func TestCounters(t *testing.T) {
 			uri:         "/update/counter/",
 			want:        http.StatusNotFound,
 		},
-		{
-			name:        "test 7",
-			method:      http.MethodPost,
-			contentType: "",
-			uri:         "/update/unknown/testCounter/100",
-			want:        http.StatusNotImplemented,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
