@@ -53,6 +53,13 @@ func TestGauges(t *testing.T) {
 			uri:         "/update/gauge/",
 			want:        http.StatusNotFound,
 		},
+		{
+			name:        "test 7",
+			method:      http.MethodPost,
+			contentType: "",
+			uri:         "/update/unknown/testCounter/100",
+			want:        http.StatusNotImplemented,
+		},
 	}
 
 	r := router.SetupRouter()
