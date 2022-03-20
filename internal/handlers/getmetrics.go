@@ -20,7 +20,7 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
-			fmt.Fprintf(w, "%f", result)
+			fmt.Fprintf(w, "%.3f", result)
 		case "counter":
 			result, err := repo.GetCounter(r.Context(), metricName)
 			if err != nil {
