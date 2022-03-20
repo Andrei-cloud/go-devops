@@ -1,16 +1,16 @@
-package handlers
+package handlers_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
+	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCounters(t *testing.T) {
-	repo := inmem.New()
 	tests := []struct {
 		name        string
 		method      string
@@ -23,7 +23,7 @@ func TestCounters(t *testing.T) {
 			method:      http.MethodGet,
 			contentType: "text/plain",
 			uri:         "/update/counter/PollCount/1",
-			want:        http.StatusBadRequest,
+			want:        http.StatusMethodNotAllowed,
 		},
 		{
 			name:        "test 3",
@@ -54,17 +54,20 @@ func TestCounters(t *testing.T) {
 			want:        http.StatusNotFound,
 		},
 	}
+	r := router.SetupRouter()
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.method, tt.uri, nil)
+			request, err := http.NewRequest(tt.method, ts.URL+tt.uri, nil)
+			require.NoError(t, err)
 			request.Header.Set("Content-Type", tt.contentType)
 
-			w := httptest.NewRecorder()
-			h := Counters(repo)
-			h.ServeHTTP(w, request)
-			res := w.Result()
-			defer res.Body.Close()
-			assert.Equal(t, tt.want, res.StatusCode)
+			resp, err := http.DefaultClient.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+			assert.Equal(t, tt.want, resp.StatusCode)
 		})
 	}
 }

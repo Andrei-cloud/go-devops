@@ -90,6 +90,6 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 			return
 		}
 		defer resp.Body.Close()
-		//fmt.Println(resp.StatusCode)
+		fmt.Println(resp.StatusCode)
 	}
 }

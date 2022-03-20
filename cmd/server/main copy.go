@@ -9,16 +9,24 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/andrei-cloud/go-devops/internal/router"
+	"github.com/andrei-cloud/go-devops/internal/handlers"
+	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
 )
 
-func main() {
+func main1() {
 
-	r := router.SetupRouter()
+	repo := inmem.New()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/update/gauge/", handlers.Gauges(repo))
+	mux.HandleFunc("/update/counter/", handlers.Counters(repo))
+	mux.HandleFunc("/update/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotImplemented)
+	})
 
 	s := &http.Server{
 		Addr:           ":8080",
-		Handler:        r,
+		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
