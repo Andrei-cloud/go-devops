@@ -13,6 +13,7 @@ func SetupRouter() *chi.Mux {
 	r := chi.NewRouter()
 	//r.Use(middleware.Logger)
 	//r.Use(middleware.Recoverer)
+	r.Get("/value/{m_type}/{m_name}", handlers.GetMetrics(repo))
 	r.Post("/update/counter/{m_name}/{value}", handlers.Counters(repo))
 	r.Post("/update/gauge/{m_name}/{value}", handlers.Gauges(repo))
 
