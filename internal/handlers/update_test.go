@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCounters(t *testing.T) {
+func TestUpdate(t *testing.T) {
 	tests := []struct {
 		name        string
 		method      string
@@ -19,41 +19,84 @@ func TestCounters(t *testing.T) {
 		want        int
 	}{
 		{
-			name:        "test 2",
+			name:        "test 1",
 			method:      http.MethodGet,
 			contentType: "text/plain",
-			uri:         "/update/counter/PollCount/1",
+			uri:         "/update/gauge/Alloc/1.345",
 			want:        http.StatusMethodNotAllowed,
+		},
+		{
+			name:        "test 2",
+			method:      http.MethodPost,
+			contentType: "text/plain",
+			uri:         "/update/gauge/Alloc/1.A45",
+			want:        http.StatusBadRequest,
 		},
 		{
 			name:        "test 3",
 			method:      http.MethodPost,
 			contentType: "text/plain",
-			uri:         "/update/counter/PollCount/1.A45",
-			want:        http.StatusBadRequest,
+			uri:         "/update/gauge/Alloc/1.345",
+			want:        http.StatusOK,
 		},
 		{
 			name:        "test 4",
 			method:      http.MethodPost,
-			contentType: "text/plain",
-			uri:         "/update/counter/PollCount/345",
+			contentType: "",
+			uri:         "/update/gauge/testGauge/100",
 			want:        http.StatusOK,
 		},
 		{
 			name:        "test 5",
 			method:      http.MethodPost,
 			contentType: "",
+			uri:         "/update/gauge/",
+			want:        http.StatusNotFound,
+		},
+		{
+			name:        "test 6",
+			method:      http.MethodPost,
+			contentType: "",
+			uri:         "/update/unknown/testCounter/100",
+			want:        http.StatusNotImplemented,
+		},
+		{
+			name:        "test 7",
+			method:      http.MethodGet,
+			contentType: "text/plain",
+			uri:         "/update/counter/PollCount/1",
+			want:        http.StatusMethodNotAllowed,
+		},
+		{
+			name:        "test 8",
+			method:      http.MethodPost,
+			contentType: "text/plain",
+			uri:         "/update/counter/PollCount/1.A45",
+			want:        http.StatusBadRequest,
+		},
+		{
+			name:        "test 9",
+			method:      http.MethodPost,
+			contentType: "text/plain",
+			uri:         "/update/counter/PollCount/345",
+			want:        http.StatusOK,
+		},
+		{
+			name:        "test 10",
+			method:      http.MethodPost,
+			contentType: "",
 			uri:         "/update/counter/testCounter/100",
 			want:        http.StatusOK,
 		},
 		{
-			name:        "test 6",
+			name:        "test 11",
 			method:      http.MethodPost,
 			contentType: "",
 			uri:         "/update/counter/",
 			want:        http.StatusNotFound,
 		},
 	}
+
 	r := router.SetupRouter()
 	ts := httptest.NewServer(r)
 	defer ts.Close()
