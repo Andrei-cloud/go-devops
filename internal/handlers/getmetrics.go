@@ -32,6 +32,5 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid metric type", http.StatusNotImplemented)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 	}
 }
