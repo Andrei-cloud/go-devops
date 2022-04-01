@@ -5,14 +5,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/andrei-cloud/go-devops/internal/collector"
 	"github.com/andrei-cloud/go-devops/internal/model"
+	"github.com/caarlos0/env"
 )
 
-var baseURL = "http://127.0.0.1:8080/update"
+var (
+	baseURL string
+	cfg     Config
+)
+
+type Config struct {
+	Address   string `env:"ADDRESS" envDefault:"127.0.0.1:8080"`
+	ReportInt int    `env:"REPORT_INTERVAL" envDefault:"10"`
+	PollInt   int    `env:"POLL_INTERVAL" envDefault:"2"`
+}
 
 type agent struct {
 	client         *http.Client
@@ -21,13 +32,21 @@ type agent struct {
 	reportInterval time.Duration
 }
 
+func init() {
+	cfg = Config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
+	baseURL = fmt.Sprintf("http://%s/update", cfg.Address)
+}
+
 func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	a := &agent{}
 	if cl == nil {
 		a.client = &http.Client{}
 	}
-	a.pollInterval = 2 * time.Second
-	a.reportInterval = 10 * time.Second
+	a.pollInterval = time.Duration(cfg.PollInt) * time.Second
+	a.reportInterval = time.Duration(cfg.ReportInt) * time.Second
 	a.collector = col
 	return a
 }
