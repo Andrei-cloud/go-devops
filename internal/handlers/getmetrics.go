@@ -71,6 +71,7 @@ func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 		if resp, err := json.Marshal(metrics); err != nil {
 			http.Error(w, "failed to build response", http.StatusInternalServerError)
 		} else {
+			w.Header().Set("Content-Type", "application/json")
 			w.Write(resp)
 		}
 	}
