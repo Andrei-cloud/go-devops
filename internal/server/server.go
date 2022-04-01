@@ -19,7 +19,8 @@ import (
 var cfg Config
 
 type Config struct {
-	Address string `env:"ADDRESS" envDefault:":8080"`
+	Address  string        `env:"ADDRESS" envDefault:":8080"`
+	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"`
 }
 
 type server struct {
@@ -32,6 +33,7 @@ func init() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
+	//fmt.Printf("%+v\n", cfg)
 }
 
 func NewServer() *server {
@@ -40,8 +42,6 @@ func NewServer() *server {
 	srv.s = &http.Server{
 		Addr:           cfg.Address,
 		Handler:        srv.r,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 	return &srv
@@ -56,7 +56,7 @@ func (srv *server) Shutdown() {
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	<-sig
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Shutdown)
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
 		fmt.Println(err)

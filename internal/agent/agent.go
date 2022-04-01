@@ -20,9 +20,9 @@ var (
 )
 
 type Config struct {
-	Address   string `env:"ADDRESS" envDefault:"127.0.0.1:8080"`
-	ReportInt int    `env:"REPORT_INTERVAL" envDefault:"10"`
-	PollInt   int    `env:"POLL_INTERVAL" envDefault:"2"`
+	Address   string        `env:"ADDRESS" envDefault:"127.0.0.1:8080"`
+	ReportInt time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
+	PollInt   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
 }
 
 type agent struct {
@@ -37,6 +37,7 @@ func init() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
+	//fmt.Printf("%+v\n", cfg)
 	baseURL = fmt.Sprintf("http://%s/update", cfg.Address)
 }
 
@@ -45,8 +46,8 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	if cl == nil {
 		a.client = &http.Client{}
 	}
-	a.pollInterval = time.Duration(cfg.PollInt) * time.Second
-	a.reportInterval = time.Duration(cfg.ReportInt) * time.Second
+	a.pollInterval = cfg.PollInt
+	a.reportInterval = cfg.ReportInt
 	a.collector = col
 	return a
 }
