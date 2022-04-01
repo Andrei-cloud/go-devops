@@ -3,12 +3,16 @@ package inmem
 import (
 	"context"
 	"fmt"
+
+	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
 type storage struct {
 	counters map[string]int64
 	gauges   map[string]float64
 }
+
+var _ repo.Repository = &storage{}
 
 func New() *storage {
 	s := &storage{}
@@ -39,4 +43,12 @@ func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 		return v, nil
 	}
 	return 0, fmt.Errorf("gauge not found")
+}
+
+func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
+	return s.gauges, nil
+}
+
+func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
+	return s.counters, nil
 }

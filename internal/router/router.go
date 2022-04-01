@@ -2,14 +2,11 @@ package router
 
 import (
 	"github.com/andrei-cloud/go-devops/internal/handlers"
-	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
+	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/go-chi/chi"
 )
 
-func SetupRouter() *chi.Mux {
-
-	repo := inmem.New()
-
+func SetupRouter(repo repo.Repository) *chi.Mux {
 	r := chi.NewRouter()
 	//r.Use(middleware.Logger)
 	//r.Use(middleware.Recoverer)
