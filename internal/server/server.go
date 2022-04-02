@@ -82,7 +82,7 @@ func NewServer() *server {
 }
 
 func (srv *server) Run(ctx context.Context) {
-	fmt.Printf("%+v \n", cfg)
+	//fmt.Printf("%+v \n", cfg)
 	if cfg.FilePath != "" {
 		if cfg.Restore {
 			if err := srv.f.Restore(srv.repo); err != nil {
