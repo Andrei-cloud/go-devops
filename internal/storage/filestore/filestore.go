@@ -60,6 +60,10 @@ func (s *FileStorage) Store(repo repo.Repository) error {
 			json.NewEncoder(writer).Encode(&metric)
 		}
 	}
+
+	metric.Delta = nil
+	metric.Value = nil
+
 	{
 		metric.MType = "counter"
 		counters, err := repo.GetCounterAll(context.Background())

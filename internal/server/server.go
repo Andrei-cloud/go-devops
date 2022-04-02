@@ -59,7 +59,7 @@ func init() {
 	if !cfg.Restore {
 		cfg.Restore = false
 	} else {
-		cfg.Restore = *restorePtr
+		cfg.Restore = cfg.Restore || *restorePtr
 	}
 }
 
@@ -82,6 +82,7 @@ func NewServer() *server {
 }
 
 func (srv *server) Run(ctx context.Context) {
+	fmt.Printf("%+v \n", cfg)
 	if cfg.FilePath != "" {
 		if cfg.Restore {
 			if err := srv.f.Restore(srv.repo); err != nil {
