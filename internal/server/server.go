@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,10 +23,10 @@ import (
 var cfg Config
 
 type Config struct {
-	Address  string        `env:"ADDRESS" envDefault:":8080"`
+	Address  string        `env:"ADDRESS"`
 	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"`
-	Interval time.Duration `env:"STORE_INTERVAL" envDefault:"300s"`
-	FilePath string        `env:"STORE_FILE" envDefault:"/tmp/devops-metrics-db.json"`
+	Interval time.Duration `env:"STORE_INTERVAL"`
+	FilePath string        `env:"STORE_FILE"`
 	Restore  bool          `env:"RESTORE" envDefault:"true"`
 }
 
@@ -37,11 +38,29 @@ type server struct {
 }
 
 func init() {
+	addressPtr := flag.String("a", ":8080", "server address format: host:port")
+	restorePtr := flag.Bool("r", true, "restore previous values")
+	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
+	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
+	flag.Parse()
 	cfg = Config{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Printf("%+v\n", cfg)
+	if cfg.Address == "" {
+		cfg.Address = *addressPtr
+	}
+	if cfg.Interval == 0 {
+		cfg.Interval = *intervalPtr
+	}
+	if cfg.FilePath == "" {
+		cfg.FilePath = *filePtr
+	}
+	if !cfg.Restore {
+		cfg.Restore = false
+	} else {
+		cfg.Restore = *restorePtr
+	}
 }
 
 func NewServer() *server {
@@ -76,10 +95,10 @@ func (srv *server) Run(ctx context.Context) {
 					if err := srv.f.Store(srv.repo); err != nil {
 						fmt.Println(err)
 					}
-					fmt.Println("filestore")
+					//fmt.Println("filestore")
 				case <-ctx.Done():
 					storeTicker.Stop()
-					fmt.Println("filestore stopped")
+					//fmt.Println("filestore stopped")
 					return
 				}
 			}

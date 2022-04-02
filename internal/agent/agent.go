@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,8 +22,8 @@ var (
 
 type Config struct {
 	Address   string        `env:"ADDRESS" envDefault:"127.0.0.1:8080"`
-	ReportInt time.Duration `env:"REPORT_INTERVAL" envDefault:"10s"`
-	PollInt   time.Duration `env:"POLL_INTERVAL" envDefault:"2s"`
+	ReportInt time.Duration `env:"REPORT_INTERVAL"`
+	PollInt   time.Duration `env:"POLL_INTERVAL"`
 }
 
 type agent struct {
@@ -33,11 +34,25 @@ type agent struct {
 }
 
 func init() {
+	addressPtr := flag.String("a", ":8080", "server address format: host:port")
+	reportPtr := flag.Duration("r", 10*time.Second, "restore previous values")
+	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
+
+	flag.Parse()
 	cfg = Config{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Printf("%+v\n", cfg)
+	if cfg.Address == "" {
+		cfg.Address = *addressPtr
+	}
+	if cfg.ReportInt == 0 {
+		cfg.ReportInt = *reportPtr
+	}
+	if cfg.PollInt == 0 {
+		cfg.PollInt = *pollPtr
+	}
+
 	baseURL = fmt.Sprintf("http://%s/update", cfg.Address)
 }
 
