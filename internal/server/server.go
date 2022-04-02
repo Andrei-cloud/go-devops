@@ -73,6 +73,9 @@ func NewServer() *server {
 	srv.s = &http.Server{
 		Addr:           cfg.Address,
 		Handler:        srv.r,
+		ReadTimeout:    60 * time.Second,
+		WriteTimeout:   60 * time.Second,
+		IdleTimeout:    30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 	return &srv
