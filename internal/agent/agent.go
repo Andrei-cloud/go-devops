@@ -21,7 +21,7 @@ var (
 )
 
 type Config struct {
-	Address   string        `env:"ADDRESS" envDefault:"127.0.0.1:8080"`
+	Address   string        `env:"ADDRESS"`
 	ReportInt time.Duration `env:"REPORT_INTERVAL"`
 	PollInt   time.Duration `env:"POLL_INTERVAL"`
 }
