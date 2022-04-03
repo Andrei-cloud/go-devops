@@ -34,7 +34,7 @@ func GzipMW(next http.Handler) http.Handler {
 	var b bytes.Buffer
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
-			if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
+			if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch || isComressible(r) {
 				var err error
 
 				gzr, err := gzip.NewReader(r.Body)
@@ -75,8 +75,7 @@ func shouldCompress(r *http.Request) bool {
 	return r.Method != http.MethodHead &&
 		r.Method != http.MethodOptions &&
 		r.Header.Get("Upgrade") == "" &&
-		strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") &&
-		isComressible(r)
+		strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
 }
 
 func isComressible(r *http.Request) (result bool) {
