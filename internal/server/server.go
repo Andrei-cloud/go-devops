@@ -78,6 +78,7 @@ func NewServer() *server {
 		IdleTimeout:    30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	fmt.Printf("%+v", srv.s)
 	return &srv
 }
 
