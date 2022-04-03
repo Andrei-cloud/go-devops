@@ -38,7 +38,7 @@ type server struct {
 }
 
 func init() {
-	addressPtr := flag.String("a", ":8080", "server address format: host:port")
+	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	restorePtr := flag.Bool("r", true, "restore previous values")
 	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
 	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
