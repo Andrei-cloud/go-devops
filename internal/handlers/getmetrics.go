@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/andrei-cloud/go-devops/internal/hash"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/go-chi/chi"
@@ -48,6 +49,8 @@ func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
+		key := r.Context().Value("key").([]byte)
+
 		switch metrics.MType {
 		case "gauge":
 			result, err := repo.GetGauge(r.Context(), metrics.ID)
@@ -56,6 +59,9 @@ func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 				return
 			}
 			metrics.Value = &result
+			if len(key) != 0 {
+				metrics.Hash = hash.Create(fmt.Sprintf("%s:gauge:%f", metrics.ID, *metrics.Value), key)
+			}
 		case "counter":
 			result, err := repo.GetCounter(r.Context(), metrics.ID)
 			if err != nil {
@@ -63,6 +69,9 @@ func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 				return
 			}
 			metrics.Delta = &result
+			if len(key) != 0 {
+				metrics.Hash = hash.Create(fmt.Sprintf("%s:counter:%d", metrics.ID, *metrics.Delta), key)
+			}
 		default:
 			http.Error(w, "invalid metric type", http.StatusNotImplemented)
 			return

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
 	"flag"
 	"fmt"
 	"log"
@@ -22,12 +23,15 @@ import (
 
 var cfg Config
 
+const password string = "my_secret"
+
 type Config struct {
 	Address  string        `env:"ADDRESS"`
 	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"`
 	Interval time.Duration `env:"STORE_INTERVAL"`
 	FilePath string        `env:"STORE_FILE"`
 	Restore  bool          `env:"RESTORE" envDefault:"true"`
+	Key      string        `env:"KEY"`
 }
 
 type server struct {
@@ -35,6 +39,7 @@ type server struct {
 	s    *http.Server
 	repo repo.Repository
 	f    filestore.Filestore
+	key  []byte
 }
 
 func init() {
@@ -42,6 +47,8 @@ func init() {
 	restorePtr := flag.Bool("r", true, "restore previous values")
 	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
 	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
+	keyPtr := flag.String("key", "", "secret key")
+
 	flag.Parse()
 	cfg = Config{}
 	if err := env.Parse(&cfg); err != nil {
@@ -61,12 +68,21 @@ func init() {
 	} else {
 		cfg.Restore = cfg.Restore || *restorePtr
 	}
+	if cfg.Key == "" {
+		cfg.Key = *keyPtr
+	}
 }
 
 func NewServer() *server {
 	srv := server{}
 	srv.repo = inmem.New()
-	srv.r = router.SetupRouter(srv.repo)
+
+	if cfg.Key != "" {
+		keyHash := sha256.Sum256([]byte(cfg.Key))
+		srv.key = keyHash[:]
+	}
+
+	srv.r = router.SetupRouter(srv.repo, srv.key)
 	if cfg.FilePath != "" {
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
 	}
@@ -78,6 +94,7 @@ func NewServer() *server {
 		IdleTimeout:    30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
 	//fmt.Printf("%+v", srv.s)
 	return &srv
 }

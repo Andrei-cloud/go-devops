@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/andrei-cloud/go-devops/internal/hash"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/go-chi/chi"
@@ -48,6 +50,8 @@ func Update(repo repo.Repository) http.HandlerFunc {
 
 func UpdatePost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		key := r.Context().Value("key").([]byte)
+
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "invalid content type", http.StatusInternalServerError)
 		}
@@ -57,24 +61,33 @@ func UpdatePost(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
+		valid, err := hash.Validate(metrics, key)
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "invalid resquest", http.StatusBadRequest)
+			return
+		}
+
 		switch metrics.MType {
 		case "gauge":
-			if metrics.Value != nil {
+			if valid && metrics.Value != nil {
 				if err := repo.UpdateGauge(r.Context(), metrics.ID, *metrics.Value); err != nil {
 					http.Error(w, "failed to update", http.StatusInternalServerError)
 					return
 				}
 			} else {
 				http.Error(w, "invalid resquest", http.StatusBadRequest)
+				return
 			}
 		case "counter":
-			if metrics.Delta != nil {
+			if valid && metrics.Delta != nil {
 				if err := repo.UpdateCounter(r.Context(), metrics.ID, *metrics.Delta); err != nil {
 					http.Error(w, "failed to update", http.StatusInternalServerError)
 					return
 				}
 			} else {
 				http.Error(w, "invalid resquest", http.StatusBadRequest)
+				return
 			}
 		default:
 			http.Error(w, "invalid metric type", http.StatusNotImplemented)

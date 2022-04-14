@@ -7,10 +7,10 @@ import (
 	"github.com/go-chi/chi"
 )
 
-func SetupRouter(repo repo.Repository) *chi.Mux {
+func SetupRouter(repo repo.Repository, key []byte) *chi.Mux {
 	r := chi.NewRouter()
 	//r.Use(middleware.Logger)
-	r.Use(mw.GzipMW)
+	r.Use(mw.GzipMW, mw.KeyInject(key))
 	r.Get("/", handlers.Default())
 	r.Get("/value/{m_type}/{m_name}", handlers.GetMetrics(repo))
 	r.Post("/update/{m_type}/{m_name}/{value}", handlers.Update(repo))

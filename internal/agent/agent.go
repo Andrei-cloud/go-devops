@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/andrei-cloud/go-devops/internal/collector"
+	"github.com/andrei-cloud/go-devops/internal/hash"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/caarlos0/env"
 )
@@ -24,6 +26,7 @@ type Config struct {
 	Address   string        `env:"ADDRESS"`
 	ReportInt time.Duration `env:"REPORT_INTERVAL"`
 	PollInt   time.Duration `env:"POLL_INTERVAL"`
+	Key       string        `env:"KEY"`
 }
 
 type agent struct {
@@ -31,12 +34,14 @@ type agent struct {
 	collector      collector.Collector
 	pollInterval   time.Duration
 	reportInterval time.Duration
+	key            []byte
 }
 
 func init() {
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	reportPtr := flag.Duration("r", 10*time.Second, "restore previous values")
 	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
+	keyPtr := flag.String("key", "", "secret key")
 
 	flag.Parse()
 	cfg = Config{}
@@ -52,6 +57,9 @@ func init() {
 	if cfg.PollInt == 0 {
 		cfg.PollInt = *pollPtr
 	}
+	if cfg.Key == "" {
+		cfg.Key = *keyPtr
+	}
 
 	baseURL = fmt.Sprintf("http://%s/update", cfg.Address)
 }
@@ -64,6 +72,10 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	a.pollInterval = cfg.PollInt
 	a.reportInterval = cfg.ReportInt
 	a.collector = col
+	if cfg.Key != "" {
+		keyHash := sha256.Sum256([]byte(cfg.Key))
+		a.key = keyHash[:]
+	}
 	return a
 }
 
@@ -143,6 +155,10 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 		metric.MType = "counter"
 		metric.Delta = &v
 
+		if len(a.key) != 0 {
+			metric.Hash = hash.Create(fmt.Sprintf("%s:counter:%d", metric.ID, *metric.Delta), a.key)
+		}
+
 		if err := json.NewEncoder(buf).Encode(metric); err != nil {
 			fmt.Println(err)
 			return
@@ -176,6 +192,10 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 		metric.ID = k
 		metric.MType = "gauge"
 		metric.Value = &v
+
+		if len(a.key) != 0 {
+			metric.Hash = hash.Create(fmt.Sprintf("%s:gauge:%f", metric.ID, *metric.Value), a.key)
+		}
 
 		if err := json.NewEncoder(buf).Encode(metric); err != nil {
 			fmt.Println(err)
