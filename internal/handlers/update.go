@@ -52,7 +52,11 @@ func Update(repo repo.Repository) http.HandlerFunc {
 
 func UpdatePost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		key := r.Context().Value(ctxKey{}).([]byte)
+		var key []byte
+		ctxKey := r.Context().Value(ctxKey{})
+		if ctxKey != nil {
+			key = ctxKey.([]byte)
+		}
 
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "invalid content type", http.StatusInternalServerError)

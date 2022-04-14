@@ -40,6 +40,7 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 
 func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var key []byte
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "invalid content type", http.StatusInternalServerError)
 		}
@@ -49,7 +50,10 @@ func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
-		key := r.Context().Value(ctxKey{}).([]byte)
+		ctxKey := r.Context().Value(ctxKey{})
+		if ctxKey != nil {
+			key = ctxKey.([]byte)
+		}
 
 		switch metrics.MType {
 		case "gauge":
