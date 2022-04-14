@@ -41,7 +41,7 @@ func init() {
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	reportPtr := flag.Duration("r", 10*time.Second, "restore previous values")
 	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
-	keyPtr := flag.String("key", "", "secret key")
+	keyPtr := flag.String("k", "", "secret key")
 
 	flag.Parse()
 	cfg = Config{}

@@ -47,7 +47,7 @@ func init() {
 	restorePtr := flag.Bool("r", true, "restore previous values")
 	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
 	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
-	keyPtr := flag.String("key", "", "secret key")
+	keyPtr := flag.String("k", "", "secret key")
 
 	flag.Parse()
 	cfg = Config{}
