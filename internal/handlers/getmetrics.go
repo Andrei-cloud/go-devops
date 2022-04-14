@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/andrei-cloud/go-devops/internal/hash"
+	mw "github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/go-chi/chi"
@@ -50,7 +51,7 @@ func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
-		ctxKey := r.Context().Value(ctxKey{})
+		ctxKey := r.Context().Value(mw.CtxKey{})
 		if ctxKey != nil {
 			key = ctxKey.([]byte)
 		}
