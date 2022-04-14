@@ -12,6 +12,8 @@ import (
 	"github.com/go-chi/chi"
 )
 
+type ctxKey struct{}
+
 func Update(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metricType := chi.URLParam(r, "m_type")
@@ -50,7 +52,7 @@ func Update(repo repo.Repository) http.HandlerFunc {
 
 func UpdatePost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		key := r.Context().Value("key").([]byte)
+		key := r.Context().Value(ctxKey{}).([]byte)
 
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "invalid content type", http.StatusInternalServerError)

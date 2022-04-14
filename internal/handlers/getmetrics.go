@@ -49,7 +49,7 @@ func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
-		key := r.Context().Value("key").([]byte)
+		key := r.Context().Value(ctxKey{}).([]byte)
 
 		switch metrics.MType {
 		case "gauge":
