@@ -15,6 +15,7 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/andrei-cloud/go-devops/internal/storage/filestore"
 	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
+	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
 
 	"github.com/caarlos0/env"
 	"github.com/go-chi/chi"
@@ -31,6 +32,7 @@ type Config struct {
 	FilePath string        `env:"STORE_FILE"`
 	Restore  bool          `env:"RESTORE" envDefault:"true"`
 	Key      string        `env:"KEY"`
+	Dsn      string        `env:"DATABASE_DSN"`
 }
 
 type server struct {
@@ -39,6 +41,7 @@ type server struct {
 	repo repo.Repository
 	f    filestore.Filestore
 	key  []byte
+	db   persistent.PersistentDB
 }
 
 func init() {
@@ -47,6 +50,7 @@ func init() {
 	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
 	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
 	keyPtr := flag.String("k", "", "secret key")
+	dsnPtr := flag.String("d", "", "database connection string")
 
 	flag.Parse()
 	cfg = Config{}
@@ -70,6 +74,9 @@ func init() {
 	if cfg.Key == "" {
 		cfg.Key = *keyPtr
 	}
+	if cfg.Dsn == "" {
+		cfg.Dsn = *dsnPtr
+	}
 }
 
 func NewServer() *server {
@@ -80,10 +87,16 @@ func NewServer() *server {
 		srv.key = []byte(cfg.Key)
 	}
 
-	srv.r = router.SetupRouter(srv.repo, srv.key)
+	if cfg.Dsn != "" {
+		srv.db = persistent.NewDB(cfg.Dsn)
+	}
+
 	if cfg.FilePath != "" {
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
 	}
+
+	srv.r = router.SetupRouter(srv.repo, srv.db, srv.key)
+
 	srv.s = &http.Server{
 		Addr:           cfg.Address,
 		Handler:        srv.r,
@@ -115,10 +128,8 @@ func (srv *server) Run(ctx context.Context) {
 					if err := srv.f.Store(srv.repo); err != nil {
 						fmt.Println(err)
 					}
-					//fmt.Println("filestore")
 				case <-ctx.Done():
 					storeTicker.Stop()
-					//fmt.Println("filestore stopped")
 					return
 				}
 			}
@@ -137,11 +148,17 @@ func (srv *server) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Shutdown)
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	if srv.f != nil && cfg.FilePath != "" {
 		if err := srv.f.Store(srv.repo); err != nil {
+			log.Println(err)
+		}
+	}
+
+	if srv.db != nil {
+		if err := srv.db.Close(); err != nil {
 			log.Println(err)
 		}
 	}
