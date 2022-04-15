@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/sha256"
 	"flag"
 	"fmt"
 	"log"
@@ -78,8 +77,7 @@ func NewServer() *server {
 	srv.repo = inmem.New()
 
 	if cfg.Key != "" {
-		keyHash := sha256.Sum256([]byte(cfg.Key))
-		srv.key = keyHash[:]
+		srv.key = []byte(cfg.Key)
 	}
 
 	srv.r = router.SetupRouter(srv.repo, srv.key)

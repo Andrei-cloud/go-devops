@@ -3,7 +3,6 @@ package agent
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -73,8 +72,7 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	a.reportInterval = cfg.ReportInt
 	a.collector = col
 	if cfg.Key != "" {
-		keyHash := sha256.Sum256([]byte(cfg.Key))
-		a.key = keyHash[:]
+		a.key = []byte(cfg.Key)
 	}
 	return a
 }
