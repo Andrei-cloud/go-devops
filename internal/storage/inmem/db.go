@@ -22,13 +22,13 @@ func New() *storage {
 }
 
 func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
-	fmt.Printf("UpdateGauge g: %s, v: %f\n", g, v)
+	// fmt.Printf("UpdateGauge g: %s, v: %f\n", g, v)
 	s.gauges[g] = v
 	return nil
 }
 
 func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
-	fmt.Printf("UpdateCounter c: %s, v: %d\n", c, v)
+	// fmt.Printf("UpdateCounter c: %s, v: %d\n", c, v)
 	s.counters[c] += v
 	return nil
 }

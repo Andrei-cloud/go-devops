@@ -61,22 +61,22 @@ func UpdatePost(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid content type", http.StatusInternalServerError)
 		}
 
-		metrics := model.Metrics{}
-		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+		metric := model.Metric{}
+		if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
-		valid, err := hash.Validate(metrics, key)
+		valid, err := hash.Validate(metric, key)
 		if err != nil {
 			fmt.Println(err)
 			http.Error(w, "invalid resquest", http.StatusBadRequest)
 			return
 		}
 
-		switch metrics.MType {
+		switch metric.MType {
 		case "gauge":
-			if valid && metrics.Value != nil {
-				if err := repo.UpdateGauge(r.Context(), metrics.ID, *metrics.Value); err != nil {
+			if valid && metric.Value != nil {
+				if err := repo.UpdateGauge(r.Context(), metric.ID, *metric.Value); err != nil {
 					http.Error(w, "failed to update", http.StatusInternalServerError)
 					return
 				}
@@ -85,8 +85,8 @@ func UpdatePost(repo repo.Repository) http.HandlerFunc {
 				return
 			}
 		case "counter":
-			if valid && metrics.Delta != nil {
-				if err := repo.UpdateCounter(r.Context(), metrics.ID, *metrics.Delta); err != nil {
+			if valid && metric.Delta != nil {
+				if err := repo.UpdateCounter(r.Context(), metric.ID, *metric.Delta); err != nil {
 					http.Error(w, "failed to update", http.StatusInternalServerError)
 					return
 				}
@@ -97,6 +97,60 @@ func UpdatePost(repo repo.Repository) http.HandlerFunc {
 		default:
 			http.Error(w, "invalid metric type", http.StatusNotImplemented)
 			return
+		}
+	}
+}
+
+func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var key []byte
+		ctxKey := r.Context().Value(mw.CtxKey{})
+		if ctxKey != nil {
+			key = ctxKey.([]byte)
+		}
+
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "invalid content type", http.StatusInternalServerError)
+		}
+
+		metrics := []model.Metric{}
+		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+			http.Error(w, "invalid resquest", http.StatusInternalServerError)
+		}
+
+		for _, m := range metrics {
+			valid, err := hash.Validate(m, key)
+			if err != nil {
+				fmt.Println(err)
+				http.Error(w, "invalid resquest", http.StatusBadRequest)
+				return
+			}
+
+			switch m.MType {
+			case "gauge":
+				if valid && m.Value != nil {
+					if err := repo.UpdateGauge(r.Context(), m.ID, *m.Value); err != nil {
+						http.Error(w, "failed to update", http.StatusInternalServerError)
+						return
+					}
+				} else {
+					http.Error(w, "invalid resquest", http.StatusBadRequest)
+					return
+				}
+			case "counter":
+				if valid && m.Delta != nil {
+					if err := repo.UpdateCounter(r.Context(), m.ID, *m.Delta); err != nil {
+						http.Error(w, "failed to update", http.StatusInternalServerError)
+						return
+					}
+				} else {
+					http.Error(w, "invalid resquest", http.StatusBadRequest)
+					return
+				}
+			default:
+				http.Error(w, "invalid metric type", http.StatusNotImplemented)
+				return
+			}
 		}
 	}
 }

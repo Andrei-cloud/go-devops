@@ -144,7 +144,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 
 func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 	var url string
-	metric := model.Metrics{}
+	metric := model.Metric{}
 	buf := bytes.NewBuffer([]byte{})
 	for k, v := range m {
 		url = fmt.Sprintf("%s/", baseURL)
@@ -182,7 +182,7 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 
 func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 	var url string
-	metric := model.Metrics{}
+	metric := model.Metric{}
 	buf := bytes.NewBuffer([]byte{})
 	for k, v := range m {
 		url = fmt.Sprintf("%s/", baseURL)

@@ -46,8 +46,8 @@ func GetMetricsPost(repo repo.Repository) http.HandlerFunc {
 			http.Error(w, "invalid content type", http.StatusInternalServerError)
 		}
 
-		metrics := model.Metrics{}
-		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
+		metric := model.Metric{}
+		if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
@@ -56,33 +56,33 @@ func GetMetricsPost(repo repo.Repository) http.HandlerFunc {
 			key = ctxKey.([]byte)
 		}
 
-		switch metrics.MType {
+		switch metric.MType {
 		case "gauge":
-			result, err := repo.GetGauge(r.Context(), metrics.ID)
+			result, err := repo.GetGauge(r.Context(), metric.ID)
 			if err != nil {
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
-			metrics.Value = &result
+			metric.Value = &result
 			if len(key) != 0 {
-				metrics.Hash = hash.Create(fmt.Sprintf("%s:gauge:%f", metrics.ID, *metrics.Value), key)
+				metric.Hash = hash.Create(fmt.Sprintf("%s:gauge:%f", metric.ID, *metric.Value), key)
 			}
 		case "counter":
-			result, err := repo.GetCounter(r.Context(), metrics.ID)
+			result, err := repo.GetCounter(r.Context(), metric.ID)
 			if err != nil {
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
-			metrics.Delta = &result
+			metric.Delta = &result
 			if len(key) != 0 {
-				metrics.Hash = hash.Create(fmt.Sprintf("%s:counter:%d", metrics.ID, *metrics.Delta), key)
+				metric.Hash = hash.Create(fmt.Sprintf("%s:counter:%d", metric.ID, *metric.Delta), key)
 			}
 		default:
 			http.Error(w, "invalid metric type", http.StatusNotImplemented)
 			return
 		}
 
-		if resp, err := json.Marshal(metrics); err != nil {
+		if resp, err := json.Marshal(metric); err != nil {
 			http.Error(w, "failed to build response", http.StatusInternalServerError)
 		} else {
 			w.Header().Set("Content-Type", "application/json")

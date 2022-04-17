@@ -107,8 +107,8 @@ func NewServer() *server {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	fmt.Printf("%+v\n", srv.s)
-	fmt.Printf("%+v\n", cfg)
+	// fmt.Printf("%+v\n", srv.s)
+	// fmt.Printf("%+v\n", cfg)
 	return &srv
 }
 

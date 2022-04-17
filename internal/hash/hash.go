@@ -15,7 +15,7 @@ func Create(src string, key []byte) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func Validate(m model.Metrics, key []byte) (bool, error) {
+func Validate(m model.Metric, key []byte) (bool, error) {
 	var data string
 	if len(key) == 0 {
 		return true, nil
