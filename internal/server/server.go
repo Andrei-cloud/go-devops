@@ -94,7 +94,7 @@ func NewServer() *server {
 
 	if cfg.Dsn != "" {
 		srv.db = persistent.NewDB(cfg.Dsn)
-		srv.r = router.SetupRouter(srv.db, srv.db, srv.key)
+		srv.r = router.SetupRouter(srv.repo, srv.db, srv.key)
 	}
 
 	srv.s = &http.Server{
