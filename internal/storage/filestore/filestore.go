@@ -90,7 +90,7 @@ func (s *FileStorage) Restore(repo repo.Repository) error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		data := scanner.Bytes()
-
+		fmt.Printf("restore: %s\n", string(data))
 		metric := model.Metrics{}
 		err = json.Unmarshal(data, &metric)
 		if err != nil {
