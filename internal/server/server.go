@@ -87,15 +87,15 @@ func NewServer() *server {
 		srv.key = []byte(cfg.Key)
 	}
 
-	if cfg.Dsn != "" {
-		srv.db = persistent.NewDB(cfg.Dsn)
-	}
-
 	if cfg.FilePath != "" {
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
+		srv.r = router.SetupRouter(srv.repo, srv.db, srv.key)
 	}
 
-	srv.r = router.SetupRouter(srv.db, srv.db, srv.key)
+	if cfg.Dsn != "" {
+		srv.db = persistent.NewDB(cfg.Dsn)
+		srv.r = router.SetupRouter(srv.db, srv.db, srv.key)
+	}
 
 	srv.s = &http.Server{
 		Addr:           cfg.Address,
