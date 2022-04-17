@@ -85,7 +85,7 @@ func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 	return nil
 }
 func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
-	fmt.Printf("DB UpdateGauge c: %s, v: %d\n", c, v)
+	fmt.Printf("DB UpdateCounter c: %s, v: %d\n", c, v)
 	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, delta) 
 	values ($1, 'counter', $2)
 	on conflict (id)

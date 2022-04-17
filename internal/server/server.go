@@ -87,15 +87,13 @@ func NewServer() *server {
 		srv.key = []byte(cfg.Key)
 	}
 
-	if cfg.FilePath != "" {
-		srv.f = filestore.NewFileStorage(cfg.FilePath)
-	}
-
 	if cfg.Dsn != "" {
 		srv.db = persistent.NewDB(cfg.Dsn)
 		if srv.db != nil {
 			srv.repo = srv.db
 		}
+	} else if cfg.FilePath != "" {
+		srv.f = filestore.NewFileStorage(cfg.FilePath)
 	}
 
 	srv.r = router.SetupRouter(srv.repo, srv.db, srv.key)
@@ -116,7 +114,7 @@ func NewServer() *server {
 
 func (srv *server) Run(ctx context.Context) {
 	//fmt.Printf("%+v \n", cfg)
-	if cfg.FilePath != "" {
+	if cfg.Dsn == "" && cfg.FilePath != "" {
 		if cfg.Restore {
 			if err := srv.f.Restore(srv.repo); err != nil {
 				log.Println(err)
