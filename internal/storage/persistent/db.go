@@ -117,14 +117,58 @@ func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 	return value, nil
 }
 func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
-	return map[string]float64{}, nil
-}
-func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
-	return map[string]int64{}, nil
+	var (
+		id     string
+		value  float64
+		gauges map[string]float64 = map[string]float64{}
+	)
+
+	rows, err := s.db.QueryContext(ctx, "SELECT id, value FROM metrics WHERE mtype = 'gauge'")
+	if err != nil {
+		return gauges, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&id, &value)
+		if err != nil {
+			return gauges, err
+		}
+		gauges[id] = value
+	}
+	err = rows.Err()
+	if err != nil {
+		return gauges, err
+	}
+
+	return gauges, nil
 }
 
-func (s *storage) Store(repo.Repository) error   { return nil }
-func (s *storage) Restore(repo.Repository) error { return nil }
+func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
+	var (
+		id       string
+		delta    int64
+		counters map[string]int64 = map[string]int64{}
+	)
+
+	rows, err := s.db.QueryContext(ctx, "SELECT id, delta FROM metrics WHERE mtype = 'counter'")
+	if err != nil {
+		return counters, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&id, &delta)
+		if err != nil {
+			return counters, err
+		}
+		counters[id] = delta
+	}
+	err = rows.Err()
+	if err != nil {
+		return counters, err
+	}
+
+	return counters, nil
+}
 
 func (s *storage) Close() error {
 	return s.db.Close()
