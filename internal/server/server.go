@@ -95,7 +95,7 @@ func NewServer() *server {
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
 	}
 
-	srv.r = router.SetupRouter(srv.repo, srv.db, srv.key)
+	srv.r = router.SetupRouter(srv.db, srv.db, srv.key)
 
 	srv.s = &http.Server{
 		Addr:           cfg.Address,
