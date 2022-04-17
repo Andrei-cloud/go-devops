@@ -120,9 +120,10 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 	var (
 		id     string
 		value  float64
-		gauges map[string]float64 = map[string]float64{}
+		gauges map[string]float64
 	)
 
+	gauges = make(map[string]float64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, value FROM metrics WHERE mtype = 'gauge'")
 	if err != nil {
 		return gauges, err
@@ -147,9 +148,10 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 	var (
 		id       string
 		delta    int64
-		counters map[string]int64 = map[string]int64{}
+		counters map[string]int64
 	)
 
+	counters = make(map[string]int64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, delta FROM metrics WHERE mtype = 'counter'")
 	if err != nil {
 		return counters, err
