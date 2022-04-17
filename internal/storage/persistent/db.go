@@ -47,7 +47,7 @@ func NewDB(dsn string) *storage {
 }
 
 func createTable(ctx context.Context, db *sql.DB) error {
-	fmt.Println("Create metrics table if not exists")
+	//fmt.Println("Create metrics table if not exists")
 
 	_, err := db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS "metrics" (
@@ -72,7 +72,7 @@ func (s *storage) Ping() error {
 }
 
 func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
-	fmt.Printf("DB UpdateGauge g: %s, v: %f\n", g, v)
+	//fmt.Printf("DB UpdateGauge g: %s, v: %f\n", g, v)
 	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) 
 	values ($1, 'gauge', $2)
 	on conflict (id)
@@ -85,12 +85,12 @@ func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 	return nil
 }
 func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
-	fmt.Printf("DB UpdateGauge c: %s, v: %d\n", c, v)
+	//fmt.Printf("DB UpdateGauge c: %s, v: %d\n", c, v)
 	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, delta) 
 	values ($1, 'counter', $2)
 	on conflict (id)
 	do
-	update set delta = $2;`, c, v)
+	update set delta = (select delta from metrics where id= $1) + $2;`, c, v)
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Printf("DB GetCounter c: %s d: %d\n", c, delta)
+	//fmt.Printf("DB GetCounter c: %s d: %d\n", c, delta)
 
 	return delta, nil
 }
@@ -116,7 +116,7 @@ func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Printf("DB GetGauge g: %s v: %f\n", g, value)
+	//fmt.Printf("DB GetGauge g: %s v: %f\n", g, value)
 
 	return value, nil
 }
@@ -126,7 +126,7 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 		value  float64
 		gauges map[string]float64
 	)
-	fmt.Println("GetGaugeAll")
+	//fmt.Println("GetGaugeAll")
 
 	gauges = make(map[string]float64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, value FROM metrics WHERE mtype = 'gauge'")
@@ -156,7 +156,7 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 		counters map[string]int64
 	)
 
-	fmt.Println("GetCounterAll")
+	//fmt.Println("GetCounterAll")
 	counters = make(map[string]int64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, delta FROM metrics WHERE mtype = 'counter'")
 	if err != nil {
