@@ -51,7 +51,7 @@ func createTable(ctx context.Context, db *sql.DB) error {
 
 	_, err := db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS "metrics" (
-		"id" varchar(15) PRIMARY KEY NOT NULL,
+		"id" varchar(45) PRIMARY KEY NOT NULL,
 		"mtype" varchar(7) NOT NULL,
 		"delta" int,
 		"value" double precision
