@@ -105,7 +105,7 @@ func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Printf("GetCounter d: %d", delta)
+	fmt.Printf("GetCounter d: %d\n", delta)
 
 	return delta, nil
 }
@@ -116,7 +116,7 @@ func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	fmt.Printf("GetCounter v: %f", value)
+	fmt.Printf("GetCounter v: %f\n", value)
 
 	return value, nil
 }
