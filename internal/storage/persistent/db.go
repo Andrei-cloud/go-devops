@@ -53,7 +53,7 @@ func createTable(ctx context.Context, db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS "metrics" (
 		"id" varchar(45) PRIMARY KEY NOT NULL,
 		"mtype" varchar(7) NOT NULL,
-		"delta" int,
+		"delta" bigint,
 		"value" double precision
 	  );`)
 
