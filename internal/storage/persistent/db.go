@@ -63,8 +63,10 @@ func createTable(ctx context.Context, db *sql.DB) error {
 func (s *storage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	if err := s.db.PingContext(ctx); err != nil {
-		return err
+	if s.db != nil {
+		if err := s.db.PingContext(ctx); err != nil {
+			return err
+		}
 	}
 	return nil
 }
