@@ -72,6 +72,7 @@ func (s *storage) Ping() error {
 }
 
 func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
+	fmt.Printf("UpdateGauge g: %s, v: %f\n", g, v)
 	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) 
 	values ($1, 'gauge', $2)
 	on conflict (id)
@@ -84,6 +85,7 @@ func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 	return nil
 }
 func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
+	fmt.Printf("UpdateGauge c: %s, v: %d\n", c, v)
 	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, delta) 
 	values ($1, 'counter', $2)
 	on conflict (id)
@@ -98,11 +100,12 @@ func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
 
 func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
 	var delta int64
-	fmt.Println("GetCounter")
+
 	err := s.db.QueryRowContext(ctx, "SELECT delta FROM metrics WHERE mtype = 'counter' and id = $1", c).Scan(&delta)
 	if err != nil {
 		return 0, err
 	}
+	fmt.Printf("GetCounter d: %d", delta)
 
 	return delta, nil
 }
@@ -113,6 +116,7 @@ func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
+	fmt.Printf("GetCounter v: %f", value)
 
 	return value, nil
 }
