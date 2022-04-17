@@ -18,7 +18,7 @@ func SetupRouter(repo repo.Repository, db persistent.PersistentDB, key []byte) *
 
 	r.Post("/update/{m_type}/{m_name}/{value}", handlers.Update(repo))
 	r.Post("/update/", handlers.UpdatePost(repo))
-	r.Post("/value/", handlers.GerMetricsPost(repo))
+	r.Post("/value/", handlers.GetMetricsPost(repo))
 
 	return r
 }

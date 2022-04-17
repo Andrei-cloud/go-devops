@@ -39,7 +39,7 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 	}
 }
 
-func GerMetricsPost(repo repo.Repository) http.HandlerFunc {
+func GetMetricsPost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var key []byte
 		if r.Header.Get("Content-Type") != "application/json" {

@@ -98,7 +98,7 @@ func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
 
 func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
 	var delta int64
-
+	fmt.Println("GetCounter")
 	err := s.db.QueryRowContext(ctx, "SELECT delta FROM metrics WHERE mtype = 'counter' and id = $1", c).Scan(&delta)
 	if err != nil {
 		return 0, err
@@ -108,7 +108,7 @@ func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
 }
 func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 	var value float64
-
+	fmt.Println("GetGauge")
 	err := s.db.QueryRowContext(ctx, "SELECT value FROM metrics WHERE mtype = 'gauge' and id = $1", g).Scan(&value)
 	if err != nil {
 		return 0, err
@@ -122,6 +122,7 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 		value  float64
 		gauges map[string]float64
 	)
+	fmt.Println("GetGaugeAll")
 
 	gauges = make(map[string]float64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, value FROM metrics WHERE mtype = 'gauge'")
@@ -151,6 +152,7 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 		counters map[string]int64
 	)
 
+	fmt.Println("GetCounterAll")
 	counters = make(map[string]int64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, delta FROM metrics WHERE mtype = 'counter'")
 	if err != nil {
