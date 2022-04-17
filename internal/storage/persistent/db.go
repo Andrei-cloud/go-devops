@@ -90,7 +90,7 @@ func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
 	values ($1, 'counter', $2)
 	on conflict (id)
 	do
-	update set delta = (select delta from metrics where id= $1) + $2;`, c, v)
+	update set delta = (select delta from metrics where id= $1 and mtype = 'counter') + $2;`, c, v)
 	if err != nil {
 		return err
 	}
