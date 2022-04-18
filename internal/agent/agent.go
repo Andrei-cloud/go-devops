@@ -234,9 +234,8 @@ func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[st
 	url = fmt.Sprintf("%ss/", baseURL)
 	for k, v := range g {
 		metric := model.Metric{}
-		var locV float64
 
-		locV = v
+		locV := v
 		metric.ID = k
 		metric.MType = "gauge"
 		metric.Value = &locV
@@ -249,9 +248,8 @@ func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[st
 
 	for k, v := range c {
 		metric := model.Metric{}
-		var locC int64
 
-		locC = v
+		locC := v
 		metric.ID = k
 		metric.MType = "counter"
 		metric.Delta = &locC
