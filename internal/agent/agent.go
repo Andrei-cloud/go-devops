@@ -26,6 +26,7 @@ type Config struct {
 	ReportInt time.Duration `env:"REPORT_INTERVAL"`
 	PollInt   time.Duration `env:"POLL_INTERVAL"`
 	Key       string        `env:"KEY"`
+	IsBulk    bool
 }
 
 type agent struct {
@@ -34,6 +35,7 @@ type agent struct {
 	pollInterval   time.Duration
 	reportInterval time.Duration
 	key            []byte
+	isBulk         bool
 }
 
 func init() {
@@ -41,6 +43,7 @@ func init() {
 	reportPtr := flag.Duration("r", 10*time.Second, "restore previous values")
 	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
 	keyPtr := flag.String("k", "", "secret key")
+	modePtr := flag.Bool("b", true, "bulk mode")
 
 	flag.Parse()
 	cfg = Config{}
@@ -59,6 +62,7 @@ func init() {
 	if cfg.Key == "" {
 		cfg.Key = *keyPtr
 	}
+	cfg.IsBulk = *modePtr
 
 	baseURL = fmt.Sprintf("http://%s/update", cfg.Address)
 }
@@ -70,6 +74,7 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	}
 	a.pollInterval = cfg.PollInt
 	a.reportInterval = cfg.ReportInt
+	a.isBulk = cfg.IsBulk
 	a.collector = col
 	if cfg.Key != "" {
 		a.key = []byte(cfg.Key)
@@ -88,8 +93,12 @@ func (a *agent) Run(ctx context.Context) {
 		case <-pollTicker.C:
 			a.collector.Collect()
 		case <-reportTicker.C:
-			a.ReportCounterPost(ctx, a.collector.GetCounter())
-			a.ReportGaugePost(ctx, a.collector.GetGauges())
+			if !a.isBulk {
+				a.ReportCounterPost(ctx, a.collector.GetCounter())
+				a.ReportGaugePost(ctx, a.collector.GetGauges())
+			} else {
+				a.ReportBulkPost(ctx, a.collector.GetCounter(), a.collector.GetGauges())
+			}
 		case <-ctx.Done():
 			return
 		}
@@ -204,6 +213,65 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 		if err != nil {
 			fmt.Println(err)
 			continue
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := a.client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer resp.Body.Close()
+		//fmt.Println(resp.StatusCode)
+	}
+}
+
+func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[string]float64) {
+	var url string
+	metrics := []model.Metric{}
+	buf := bytes.NewBuffer([]byte{})
+	url = fmt.Sprintf("%ss/", baseURL)
+	for k, v := range g {
+		metric := model.Metric{}
+		var locV float64
+
+		locV = v
+		metric.ID = k
+		metric.MType = "gauge"
+		metric.Value = &locV
+
+		if len(a.key) != 0 {
+			metric.Hash = hash.Create(fmt.Sprintf("%s:gauge:%f", metric.ID, *metric.Value), a.key)
+		}
+		metrics = append(metrics, metric)
+	}
+
+	for k, v := range c {
+		metric := model.Metric{}
+		var locC int64
+
+		locC = v
+		metric.ID = k
+		metric.MType = "counter"
+		metric.Delta = &locC
+
+		if len(a.key) != 0 {
+			metric.Hash = hash.Create(fmt.Sprintf("%s:counter:%d", metric.ID, *metric.Delta), a.key)
+		}
+		metrics = append(metrics, metric)
+	}
+
+	if len(metrics) > 0 {
+		if err := json.NewEncoder(buf).Encode(metrics); err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
 
 		req.Header.Set("Content-Type", "application/json")
