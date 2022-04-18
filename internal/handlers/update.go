@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -68,7 +68,7 @@ func UpdatePost(repo repo.Repository) http.HandlerFunc {
 
 		valid, err := hash.Validate(metric, key)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			http.Error(w, "invalid resquest", http.StatusBadRequest)
 			return
 		}
@@ -121,7 +121,7 @@ func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 		for _, m := range metrics {
 			valid, err := hash.Validate(m, key)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				http.Error(w, "invalid resquest", http.StatusBadRequest)
 				return
 			}

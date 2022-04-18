@@ -3,7 +3,7 @@ package persistent
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/andrei-cloud/go-devops/internal/repo"
@@ -30,17 +30,17 @@ var _ repo.Repository = &storage{}
 func NewDB(dsn string) *storage {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		fmt.Print(err)
+		log.Fatalln(err)
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
-		fmt.Print(err)
+		log.Fatalln(err)
 		return nil
 	}
 	if err := createTable(ctx, db); err != nil {
-		fmt.Print(err)
+		log.Fatalln(err)
 		return nil
 	}
 	return &storage{db}

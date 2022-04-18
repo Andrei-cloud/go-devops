@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,5 +24,5 @@ func main() {
 	<-sig
 
 	cancel()
-	fmt.Println("agent quit")
+	log.Println("agent quit")
 }

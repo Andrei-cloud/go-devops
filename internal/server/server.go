@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -91,6 +90,8 @@ func NewServer() *server {
 		srv.db = persistent.NewDB(cfg.Dsn)
 		if srv.db != nil {
 			srv.repo = srv.db
+		} else {
+			log.Fatalln("Failed to connect to DB")
 		}
 	} else if cfg.FilePath != "" {
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
@@ -107,13 +108,10 @@ func NewServer() *server {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	// fmt.Printf("%+v\n", srv.s)
-	// fmt.Printf("%+v\n", cfg)
 	return &srv
 }
 
 func (srv *server) Run(ctx context.Context) {
-	//fmt.Printf("%+v \n", cfg)
 	if cfg.Dsn == "" && cfg.FilePath != "" {
 		if cfg.Restore {
 			if err := srv.f.Restore(srv.repo); err != nil {
@@ -128,7 +126,7 @@ func (srv *server) Run(ctx context.Context) {
 				select {
 				case <-storeTicker.C:
 					if err := srv.f.Store(srv.repo); err != nil {
-						fmt.Println(err)
+						log.Println(err)
 					}
 				case <-ctx.Done():
 					storeTicker.Stop()
@@ -138,6 +136,7 @@ func (srv *server) Run(ctx context.Context) {
 		}(ctx)
 	}
 
+	log.Printf("server listening on: %v", cfg.Address)
 	go srv.s.ListenAndServe()
 
 }

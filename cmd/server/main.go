@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 
 	"github.com/andrei-cloud/go-devops/internal/server"
 )
@@ -14,5 +15,5 @@ func main() {
 
 	s.Shutdown() //blocking function
 	cancel()
-
+	log.Println("server quit")
 }

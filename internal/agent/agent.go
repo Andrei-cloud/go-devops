@@ -83,6 +83,8 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 }
 
 func (a *agent) Run(ctx context.Context) {
+	log.Printf("Agent sending metrics to: %v\n", cfg.Address)
+
 	pollTicker := time.NewTicker(a.pollInterval)
 	defer pollTicker.Stop()
 	reportTicker := time.NewTicker(a.reportInterval)
@@ -112,7 +114,7 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 
@@ -120,7 +122,7 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		defer resp.Body.Close()
@@ -135,7 +137,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 
@@ -143,7 +145,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		defer resp.Body.Close()
@@ -167,13 +169,13 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 		}
 
 		if err := json.NewEncoder(buf).Encode(metric); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 
@@ -181,7 +183,7 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		defer resp.Body.Close()
@@ -205,13 +207,13 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 		}
 
 		if err := json.NewEncoder(buf).Encode(metric); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 
@@ -219,7 +221,7 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		defer resp.Body.Close()
@@ -262,13 +264,13 @@ func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[st
 
 	if len(metrics) > 0 {
 		if err := json.NewEncoder(buf).Encode(metrics); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
@@ -276,7 +278,7 @@ func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[st
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		defer resp.Body.Close()
