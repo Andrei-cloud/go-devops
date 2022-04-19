@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"flag"
-	"log"
+
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +15,8 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/storage/filestore"
 	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
 	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/caarlos0/env"
 	"github.com/go-chi/chi"
@@ -40,7 +42,6 @@ type server struct {
 	repo repo.Repository
 	f    filestore.Filestore
 	key  []byte
-	db   persistent.PersistentDB
 }
 
 func init() {
@@ -50,11 +51,12 @@ func init() {
 	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
 	keyPtr := flag.String("k", "", "secret key")
 	dsnPtr := flag.String("d", "", "database connection string")
+	debugPtr := flag.Bool("debug", false, "sets log level to debug")
 
 	flag.Parse()
 	cfg = Config{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatal(err)
+		log.Fatal().AnErr("init", err)
 	}
 	if cfg.Address == "" {
 		cfg.Address = *addressPtr
@@ -76,6 +78,12 @@ func init() {
 	if cfg.Dsn == "" {
 		cfg.Dsn = *dsnPtr
 	}
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debugPtr {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		log.Debug().Msg("DEBUG LEVEL IS ENABLED")
+	}
 }
 
 func NewServer() *server {
@@ -87,17 +95,17 @@ func NewServer() *server {
 	}
 
 	if cfg.Dsn != "" {
-		srv.db = persistent.NewDB(cfg.Dsn)
-		if srv.db != nil {
-			srv.repo = srv.db
-		} else {
-			log.Fatalln("Failed to connect to DB")
+		log.Debug().Msg("Database is used as Storage")
+		srv.repo = persistent.NewDB(cfg.Dsn)
+		if srv.repo == nil {
+			log.Fatal().Msg("Failed to connect to DB")
 		}
 	} else if cfg.FilePath != "" {
+		log.Debug().Msg("Faile is used as Storage")
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
 	}
 
-	srv.r = router.SetupRouter(srv.repo, srv.db, srv.key)
+	srv.r = router.SetupRouter(srv.repo, srv.key)
 
 	srv.s = &http.Server{
 		Addr:           cfg.Address,
@@ -115,7 +123,7 @@ func (srv *server) Run(ctx context.Context) {
 	if cfg.Dsn == "" && cfg.FilePath != "" {
 		if cfg.Restore {
 			if err := srv.f.Restore(srv.repo); err != nil {
-				log.Println(err)
+				log.Error().AnErr("run", err)
 			}
 		}
 
@@ -126,7 +134,7 @@ func (srv *server) Run(ctx context.Context) {
 				select {
 				case <-storeTicker.C:
 					if err := srv.f.Store(srv.repo); err != nil {
-						log.Println(err)
+						log.Error().AnErr("run", err)
 					}
 				case <-ctx.Done():
 					storeTicker.Stop()
@@ -136,7 +144,7 @@ func (srv *server) Run(ctx context.Context) {
 		}(ctx)
 	}
 
-	log.Printf("server listening on: %v", cfg.Address)
+	log.Info().Msgf("server listening on: %v", cfg.Address)
 	go srv.s.ListenAndServe()
 
 }
@@ -149,18 +157,18 @@ func (srv *server) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Shutdown)
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
-		log.Println(err)
+		log.Error().AnErr("shutdown", err)
 	}
 
 	if srv.f != nil && cfg.FilePath != "" {
 		if err := srv.f.Store(srv.repo); err != nil {
-			log.Println(err)
+			log.Error().AnErr("shutdown", err)
 		}
 	}
 
-	if srv.db != nil {
-		if err := srv.db.Close(); err != nil {
-			log.Println(err)
+	if srv.repo != nil {
+		if err := srv.repo.Close(); err != nil {
+			log.Error().AnErr("shutdown", err)
 		}
 	}
 }

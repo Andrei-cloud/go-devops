@@ -54,3 +54,6 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 	return s.counters, nil
 }
+
+func (s *storage) Ping() error  { return nil }
+func (s *storage) Close() error { return nil }

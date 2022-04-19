@@ -99,7 +99,7 @@ func TestUpdate(t *testing.T) {
 		},
 	}
 
-	r := router.SetupRouter(inmem.New(), nil, []byte{})
+	r := router.SetupRouter(inmem.New(), []byte{})
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -176,7 +176,7 @@ func TestUpdatePost(t *testing.T) {
 		},
 	}
 
-	r := router.SetupRouter(inmem.New(), nil, []byte{})
+	r := router.SetupRouter(inmem.New(), []byte{})
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 

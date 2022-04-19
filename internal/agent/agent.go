@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -14,6 +13,8 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/hash"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/caarlos0/env"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -44,11 +45,12 @@ func init() {
 	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
 	keyPtr := flag.String("k", "", "secret key")
 	modePtr := flag.Bool("b", true, "bulk mode")
+	debugPtr := flag.Bool("debug", false, "sets log level to debug")
 
 	flag.Parse()
 	cfg = Config{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatal(err)
+		log.Fatal().AnErr("init", err)
 	}
 	if cfg.Address == "" {
 		cfg.Address = *addressPtr
@@ -63,6 +65,12 @@ func init() {
 		cfg.Key = *keyPtr
 	}
 	cfg.IsBulk = *modePtr
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debugPtr {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		log.Debug().Msg("DEBUG LEVEL IS ENABLED")
+	}
 
 	baseURL = fmt.Sprintf("http://%s/update", cfg.Address)
 }
@@ -83,7 +91,7 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 }
 
 func (a *agent) Run(ctx context.Context) {
-	log.Printf("Agent sending metrics to: %v\n", cfg.Address)
+	log.Info().Msgf("Agent sending metrics to: %v", cfg.Address)
 
 	pollTicker := time.NewTicker(a.pollInterval)
 	defer pollTicker.Stop()
@@ -114,7 +122,7 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportCounter", err)
 			continue
 		}
 
@@ -122,11 +130,11 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportCounter", err)
 			return
 		}
 		defer resp.Body.Close()
-		//fmt.Println(resp.StatusCode)
+		log.Debug().Int("code", resp.StatusCode).Msg("ReportCounter")
 	}
 }
 
@@ -137,7 +145,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportGauge", err)
 			continue
 		}
 
@@ -145,11 +153,11 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportGauge", err)
 			return
 		}
 		defer resp.Body.Close()
-		//fmt.Println(resp.StatusCode)
+		log.Debug().Int("code", resp.StatusCode).Msg("ReportGauge")
 	}
 }
 
@@ -169,13 +177,13 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 		}
 
 		if err := json.NewEncoder(buf).Encode(metric); err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportCounterPost", err)
 			return
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportCounterPost", err)
 			continue
 		}
 
@@ -183,11 +191,11 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportCounterPost", err)
 			return
 		}
 		defer resp.Body.Close()
-		//fmt.Println(resp.StatusCode)
+		log.Debug().Int("code", resp.StatusCode).Msg("ReportCounterPost")
 	}
 }
 
@@ -207,13 +215,13 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 		}
 
 		if err := json.NewEncoder(buf).Encode(metric); err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportGaugePost", err)
 			return
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportGaugePost", err)
 			continue
 		}
 
@@ -221,11 +229,11 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportGaugePost", err)
 			return
 		}
 		defer resp.Body.Close()
-		//fmt.Println(resp.StatusCode)
+		log.Debug().Int("code", resp.StatusCode).Msg("ReportGaugePost")
 	}
 }
 
@@ -264,13 +272,13 @@ func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[st
 
 	if len(metrics) > 0 {
 		if err := json.NewEncoder(buf).Encode(metrics); err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportBulkPost", err)
 			return
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, buf)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportBulkPost", err)
 			return
 		}
 
@@ -278,10 +286,10 @@ func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[st
 
 		resp, err := a.client.Do(req)
 		if err != nil {
-			log.Println(err)
+			log.Error().AnErr("ReportBulkPost", err)
 			return
 		}
 		defer resp.Body.Close()
-		//fmt.Println(resp.StatusCode)
+		log.Debug().Int("code", resp.StatusCode).Msg("ReportBulkPost")
 	}
 }

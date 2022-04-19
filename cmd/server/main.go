@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"log"
 
 	"github.com/andrei-cloud/go-devops/internal/server"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -15,5 +15,5 @@ func main() {
 
 	s.Shutdown() //blocking function
 	cancel()
-	log.Println("server quit")
+	log.Info().Msg("server quit")
 }

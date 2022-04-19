@@ -3,23 +3,12 @@ package persistent
 import (
 	"context"
 	"database/sql"
-	"log"
 	"time"
 
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/rs/zerolog/log"
 )
-
-type PersistentDB interface {
-	Ping() error
-	Close() error
-	UpdateGauge(ctx context.Context, g string, v float64) error
-	UpdateCounter(ctx context.Context, c string, v int64) error
-	GetCounter(ctx context.Context, c string) (int64, error)
-	GetGauge(ctx context.Context, g string) (float64, error)
-	GetGaugeAll(ctx context.Context) (map[string]float64, error)
-	GetCounterAll(ctx context.Context) (map[string]int64, error)
-}
 
 type storage struct {
 	db *sql.DB
@@ -30,25 +19,24 @@ var _ repo.Repository = &storage{}
 func NewDB(dsn string) *storage {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal().AnErr("NewDB", err)
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
-		log.Fatalln(err)
+		log.Fatal().AnErr("NewDB", err)
 		return nil
 	}
 	if err := createTable(ctx, db); err != nil {
-		log.Fatalln(err)
+		log.Fatal().AnErr("NewDB", err)
 		return nil
 	}
 	return &storage{db}
 }
 
 func createTable(ctx context.Context, db *sql.DB) error {
-	// fmt.Println("Create metrics table if not exists")
-
+	log.Debug().Msg("create table if not already exists")
 	_, err := db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS "metrics" (
 		"id" varchar(45) PRIMARY KEY NOT NULL,
@@ -72,7 +60,7 @@ func (s *storage) Ping() error {
 }
 
 func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
-	// fmt.Printf("DB UpdateGauge g: %s, v: %f\n", g, v)
+	log.Debug().Str("metric", g).Float64("value", v).Msg("DB UpdateGauge")
 	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) 
 	values ($1, 'gauge', $2)
 	on conflict (id)
@@ -85,7 +73,7 @@ func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 	return nil
 }
 func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
-	// fmt.Printf("DB UpdateCounter c: %s, v: %d\n", c, v)
+	log.Debug().Str("metric", c).Int64("delta", v).Msg("DB UpdateCounter")
 	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, delta) 
 	values ($1, 'counter', $2)
 	on conflict (id)
@@ -105,7 +93,7 @@ func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	// fmt.Printf("DB GetCounter c: %s d: %d\n", c, delta)
+	log.Debug().Str("metric", c).Int64("delta", delta).Msg("DB GetCounter")
 
 	return delta, nil
 }
@@ -116,7 +104,7 @@ func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	// fmt.Printf("DB GetGauge g: %s v: %f\n", g, value)
+	log.Debug().Str("metric", g).Float64("value", value).Msg("DB GetGauge")
 
 	return value, nil
 }
@@ -126,7 +114,7 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 		value  float64
 		gauges map[string]float64
 	)
-	// fmt.Println("GetGaugeAll")
+	log.Debug().Msg("DB GetGetGaugeAllGauge")
 
 	gauges = make(map[string]float64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, value FROM metrics WHERE mtype = 'gauge'")
@@ -156,7 +144,8 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 		counters map[string]int64
 	)
 
-	// fmt.Println("GetCounterAll")
+	log.Debug().Msg("DB GetCounterAll")
+
 	counters = make(map[string]int64)
 	rows, err := s.db.QueryContext(ctx, "SELECT id, delta FROM metrics WHERE mtype = 'counter'")
 	if err != nil {
@@ -179,5 +168,6 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 }
 
 func (s *storage) Close() error {
+	log.Debug().Msg("DB Close")
 	return s.db.Close()
 }
