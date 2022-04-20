@@ -22,11 +22,13 @@ func New() *storage {
 }
 
 func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
+	// fmt.Printf("UpdateGauge g: %s, v: %f\n", g, v)
 	s.gauges[g] = v
 	return nil
 }
 
 func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
+	// fmt.Printf("UpdateCounter c: %s, v: %d\n", c, v)
 	s.counters[c] += v
 	return nil
 }
@@ -52,3 +54,6 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 	return s.counters, nil
 }
+
+func (s *storage) Ping() error  { return nil }
+func (s *storage) Close() error { return nil }

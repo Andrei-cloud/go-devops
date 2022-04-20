@@ -47,7 +47,7 @@ func (s *FileStorage) Store(repo repo.Repository) error {
 	defer s.close(file)
 
 	writer := bufio.NewWriter(file)
-	metric := model.Metrics{}
+	metric := model.Metric{}
 	{
 		metric.MType = "gauge"
 		gauges, err := repo.GetGaugeAll(context.Background())
@@ -90,8 +90,8 @@ func (s *FileStorage) Restore(repo repo.Repository) error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		data := scanner.Bytes()
-
-		metric := model.Metrics{}
+		// fmt.Printf("restore: %s\n", string(data))
+		metric := model.Metric{}
 		err = json.Unmarshal(data, &metric)
 		if err != nil {
 			return err

@@ -3,8 +3,7 @@ package server
 import (
 	"context"
 	"flag"
-	"fmt"
-	"log"
+
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +14,9 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/andrei-cloud/go-devops/internal/storage/filestore"
 	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
+	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/caarlos0/env"
 	"github.com/go-chi/chi"
@@ -22,12 +24,16 @@ import (
 
 var cfg Config
 
+const password string = "my_secret"
+
 type Config struct {
 	Address  string        `env:"ADDRESS"`
 	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"`
 	Interval time.Duration `env:"STORE_INTERVAL"`
 	FilePath string        `env:"STORE_FILE"`
 	Restore  bool          `env:"RESTORE" envDefault:"true"`
+	Key      string        `env:"KEY"`
+	Dsn      string        `env:"DATABASE_DSN"`
 }
 
 type server struct {
@@ -35,6 +41,7 @@ type server struct {
 	s    *http.Server
 	repo repo.Repository
 	f    filestore.Filestore
+	key  []byte
 }
 
 func init() {
@@ -42,10 +49,14 @@ func init() {
 	restorePtr := flag.Bool("r", true, "restore previous values")
 	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
 	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
+	keyPtr := flag.String("k", "", "secret key")
+	dsnPtr := flag.String("d", "", "database connection string")
+	debugPtr := flag.Bool("debug", false, "sets log level to debug")
+
 	flag.Parse()
 	cfg = Config{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatal(err)
+		log.Fatal().AnErr("init", err)
 	}
 	if cfg.Address == "" {
 		cfg.Address = *addressPtr
@@ -61,15 +72,41 @@ func init() {
 	} else {
 		cfg.Restore = cfg.Restore || *restorePtr
 	}
+	if cfg.Key == "" {
+		cfg.Key = *keyPtr
+	}
+	if cfg.Dsn == "" {
+		cfg.Dsn = *dsnPtr
+	}
+
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debugPtr {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		log.Debug().Msg("DEBUG LEVEL IS ENABLED")
+	}
 }
 
 func NewServer() *server {
 	srv := server{}
 	srv.repo = inmem.New()
-	srv.r = router.SetupRouter(srv.repo)
-	if cfg.FilePath != "" {
+
+	if cfg.Key != "" {
+		srv.key = []byte(cfg.Key)
+	}
+
+	if cfg.Dsn != "" {
+		log.Debug().Msg("Database is used as Storage")
+		srv.repo = persistent.NewDB(cfg.Dsn)
+		if srv.repo == nil {
+			log.Fatal().Msg("Failed to connect to DB")
+		}
+	} else if cfg.FilePath != "" {
+		log.Debug().Msg("Faile is used as Storage")
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
 	}
+
+	srv.r = router.SetupRouter(srv.repo, srv.key)
+
 	srv.s = &http.Server{
 		Addr:           cfg.Address,
 		Handler:        srv.r,
@@ -78,16 +115,15 @@ func NewServer() *server {
 		IdleTimeout:    30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	//fmt.Printf("%+v", srv.s)
+
 	return &srv
 }
 
 func (srv *server) Run(ctx context.Context) {
-	//fmt.Printf("%+v \n", cfg)
-	if cfg.FilePath != "" {
+	if cfg.Dsn == "" && cfg.FilePath != "" {
 		if cfg.Restore {
 			if err := srv.f.Restore(srv.repo); err != nil {
-				log.Println(err)
+				log.Error().AnErr("run", err)
 			}
 		}
 
@@ -98,18 +134,17 @@ func (srv *server) Run(ctx context.Context) {
 				select {
 				case <-storeTicker.C:
 					if err := srv.f.Store(srv.repo); err != nil {
-						fmt.Println(err)
+						log.Error().AnErr("run", err)
 					}
-					//fmt.Println("filestore")
 				case <-ctx.Done():
 					storeTicker.Stop()
-					//fmt.Println("filestore stopped")
 					return
 				}
 			}
 		}(ctx)
 	}
 
+	log.Info().Msgf("server listening on: %v", cfg.Address)
 	go srv.s.ListenAndServe()
 
 }
@@ -122,12 +157,18 @@ func (srv *server) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Shutdown)
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
-		fmt.Println(err)
+		log.Error().AnErr("shutdown", err)
 	}
 
 	if srv.f != nil && cfg.FilePath != "" {
 		if err := srv.f.Store(srv.repo); err != nil {
-			log.Println(err)
+			log.Error().AnErr("shutdown", err)
+		}
+	}
+
+	if srv.repo != nil {
+		if err := srv.repo.Close(); err != nil {
+			log.Error().AnErr("shutdown", err)
 		}
 	}
 }

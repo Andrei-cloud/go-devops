@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/andrei-cloud/go-devops/internal/agent"
 	"github.com/andrei-cloud/go-devops/internal/collector"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -24,5 +24,5 @@ func main() {
 	<-sig
 
 	cancel()
-	fmt.Println("agent quit")
+	log.Info().Msg("agent quit")
 }
