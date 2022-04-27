@@ -97,6 +97,8 @@ func (a *agent) Run(ctx context.Context) {
 
 	pollTicker := time.NewTicker(a.pollInterval)
 	defer pollTicker.Stop()
+	pollExtraTicker := time.NewTicker(a.pollInterval)
+	defer pollTicker.Stop()
 	reportTicker := time.NewTicker(a.reportInterval)
 	defer reportTicker.Stop()
 
@@ -106,6 +108,18 @@ func (a *agent) Run(ctx context.Context) {
 			select {
 			case <-ticker.C:
 				a.collector.Collect()
+			case <-lctx.Done():
+				return
+			}
+		}
+	}
+
+	collectorExtra := func(lctx context.Context, ticker *time.Ticker) {
+		defer wg.Done()
+		for {
+			select {
+			case <-ticker.C:
+				a.collector.CollectExtra()
 			case <-lctx.Done():
 				return
 			}
@@ -129,8 +143,9 @@ func (a *agent) Run(ctx context.Context) {
 		}
 	}
 
-	wg.Add(2)
+	wg.Add(3)
 	go collector(ctx, pollTicker)
+	go collectorExtra(ctx, pollExtraTicker)
 	go reporter(ctx, reportTicker)
 
 	wg.Wait()
