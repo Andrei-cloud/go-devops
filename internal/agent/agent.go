@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/andrei-cloud/go-devops/internal/collector"
@@ -91,6 +92,7 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 }
 
 func (a *agent) Run(ctx context.Context) {
+	wg := &sync.WaitGroup{}
 	log.Info().Msgf("Agent sending metrics to: %v", cfg.Address)
 
 	pollTicker := time.NewTicker(a.pollInterval)
@@ -98,21 +100,41 @@ func (a *agent) Run(ctx context.Context) {
 	reportTicker := time.NewTicker(a.reportInterval)
 	defer reportTicker.Stop()
 
-	for {
-		select {
-		case <-pollTicker.C:
-			a.collector.Collect()
-		case <-reportTicker.C:
-			if !a.isBulk {
-				a.ReportCounterPost(ctx, a.collector.GetCounter())
-				a.ReportGaugePost(ctx, a.collector.GetGauges())
-			} else {
-				a.ReportBulkPost(ctx, a.collector.GetCounter(), a.collector.GetGauges())
+	collector := func(lctx context.Context, ticker *time.Ticker) {
+		defer wg.Done()
+		for {
+			select {
+			case <-ticker.C:
+				a.collector.Collect()
+			case <-lctx.Done():
+				return
 			}
-		case <-ctx.Done():
-			return
 		}
 	}
+
+	reporter := func(lctx context.Context, ticker *time.Ticker) {
+		defer wg.Done()
+		for {
+			select {
+			case <-ticker.C:
+				if !a.isBulk {
+					a.ReportCounterPost(ctx, a.collector.GetCounter())
+					a.ReportGaugePost(ctx, a.collector.GetGauges())
+				} else {
+					a.ReportBulkPost(ctx, a.collector.GetCounter(), a.collector.GetGauges())
+				}
+			case <-lctx.Done():
+				return
+			}
+		}
+	}
+
+	wg.Add(2)
+	go collector(ctx, pollTicker)
+	go reporter(ctx, reportTicker)
+
+	wg.Wait()
+	log.Info().Msg("Agent stopping")
 }
 
 func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
