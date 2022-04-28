@@ -17,12 +17,14 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go agent.Run(ctx)
+	go func() {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+		<-sig
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-	<-sig
+		cancel()
+	}()
 
-	cancel()
+	agent.Run(ctx)
 	log.Info().Msg("agent quit")
 }
