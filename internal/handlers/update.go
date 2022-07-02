@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi"
+	"github.com/rs/zerolog/log"
+
 	"github.com/andrei-cloud/go-devops/internal/hash"
 	mw "github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/andrei-cloud/go-devops/internal/repo"
-	"github.com/go-chi/chi"
-	"github.com/rs/zerolog/log"
 )
 
 func Update(repo repo.Repository) http.HandlerFunc {
