@@ -24,8 +24,6 @@ import (
 
 var cfg Config
 
-const password string = "my_secret"
-
 type Config struct {
 	Address  string        `env:"ADDRESS"`
 	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"`
@@ -56,7 +54,7 @@ func init() {
 	flag.Parse()
 	cfg = Config{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatal().AnErr("init", err)
+		log.Fatal().AnErr("Parse", err).Msg("init")
 	}
 	if cfg.Address == "" {
 		cfg.Address = *addressPtr
@@ -123,7 +121,7 @@ func (srv *server) Run(ctx context.Context) {
 	if cfg.Dsn == "" && cfg.FilePath != "" {
 		if cfg.Restore {
 			if err := srv.f.Restore(srv.repo); err != nil {
-				log.Error().AnErr("run", err)
+				log.Error().AnErr("Restore", err).Msg("Run")
 			}
 		}
 
@@ -134,7 +132,7 @@ func (srv *server) Run(ctx context.Context) {
 				select {
 				case <-storeTicker.C:
 					if err := srv.f.Store(srv.repo); err != nil {
-						log.Error().AnErr("run", err)
+						log.Error().AnErr("Store", err).Msg("Run")
 					}
 				case <-ctx.Done():
 					storeTicker.Stop()
@@ -157,18 +155,18 @@ func (srv *server) Shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Shutdown)
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
-		log.Error().AnErr("shutdown", err)
+		log.Error().AnErr("Shutdown", err).Msg("Shutdown")
 	}
 
 	if srv.f != nil && cfg.FilePath != "" {
 		if err := srv.f.Store(srv.repo); err != nil {
-			log.Error().AnErr("shutdown", err)
+			log.Error().AnErr("Store", err).Msg("Shutdown")
 		}
 	}
 
 	if srv.repo != nil {
 		if err := srv.repo.Close(); err != nil {
-			log.Error().AnErr("shutdown", err)
+			log.Error().AnErr("Close", err).Msg("Shutdown")
 		}
 	}
 }

@@ -22,7 +22,7 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 		case "gauge":
 			result, err := repo.GetGauge(r.Context(), metricName)
 			if err != nil {
-				log.Error().AnErr("UpdatePost", err)
+				log.Error().AnErr("UpdatePost", err).Msg("GetMetrics")
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
@@ -30,7 +30,7 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 		case "counter":
 			result, err := repo.GetCounter(r.Context(), metricName)
 			if err != nil {
-				log.Error().AnErr("UpdatePost", err)
+				log.Error().AnErr("UpdatePost", err).Msg("GetMetrics")
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
@@ -51,7 +51,7 @@ func GetMetricsPost(repo repo.Repository) http.HandlerFunc {
 
 		metric := model.Metric{}
 		if err := json.NewDecoder(r.Body).Decode(&metric); err != nil {
-			log.Error().AnErr("UpdatePost", err)
+			log.Error().AnErr("UpdatePost", err).Msg("GetMetricsPost")
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
@@ -64,7 +64,7 @@ func GetMetricsPost(repo repo.Repository) http.HandlerFunc {
 		case "gauge":
 			result, err := repo.GetGauge(r.Context(), metric.ID)
 			if err != nil {
-				log.Error().AnErr("UpdatePost", err)
+				log.Error().AnErr("UpdatePost", err).Msg("GetMetricsPost")
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
@@ -75,7 +75,7 @@ func GetMetricsPost(repo repo.Repository) http.HandlerFunc {
 		case "counter":
 			result, err := repo.GetCounter(r.Context(), metric.ID)
 			if err != nil {
-				log.Error().AnErr("UpdatePost", err)
+				log.Error().AnErr("UpdatePost", err).Msg("GetMetricsPost")
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}

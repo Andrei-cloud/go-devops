@@ -10,7 +10,7 @@ import (
 func Ping(db repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(); err != nil {
-			log.Error().AnErr("Ping", err)
+			log.Error().AnErr("Ping", err).Msg("Ping")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
