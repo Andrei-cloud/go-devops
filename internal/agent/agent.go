@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"sync"
 	"time"
 
@@ -29,6 +30,7 @@ type Config struct {
 	PollInt   time.Duration `env:"POLL_INTERVAL"`
 	Key       string        `env:"KEY"`
 	IsBulk    bool
+	Debug     bool
 }
 
 type agent struct {
@@ -44,9 +46,9 @@ func init() {
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	reportPtr := flag.Duration("r", 10*time.Second, "restore previous values")
 	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
-	keyPtr := flag.String("k", "", "secret key")
+	keyPtr := flag.String("k", "my_secret", "secret key")
 	modePtr := flag.Bool("b", true, "bulk mode")
-	debugPtr := flag.Bool("debug", false, "sets log level to debug")
+	debugPtr := flag.Bool("debug", true, "sets log level to debug")
 
 	flag.Parse()
 	cfg = Config{}
@@ -69,6 +71,7 @@ func init() {
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if *debugPtr {
+		cfg.Debug = true
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		log.Debug().Msg("DEBUG LEVEL IS ENABLED")
 	}
@@ -92,6 +95,13 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 }
 
 func (a *agent) Run(ctx context.Context) {
+	if cfg.Debug {
+		go func() {
+			log.Debug().Msg("profiler available on: localhost:6060")
+			log.Log().AnErr("pprof", http.ListenAndServe("localhost:6060", nil)).Msg("profiler")
+		}()
+	}
+
 	wg := &sync.WaitGroup{}
 	log.Info().Msgf("Agent sending metrics to: %v", cfg.Address)
 

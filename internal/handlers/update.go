@@ -122,14 +122,14 @@ func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 
 		metrics := []model.Metric{}
 		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
-			log.Error().AnErr("Decode", err).Msg("UpdateBulkPost")
+			log.Debug().AnErr("Decode", err).Msg("UpdateBulkPost")
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
 		for _, m := range metrics {
 			valid, err := hash.Validate(m, key)
 			if err != nil {
-				log.Error().AnErr("Validate", err).Msg("UpdateBulkPost")
+				log.Debug().AnErr("Validate", err).Msg("UpdateBulkPost")
 				http.Error(w, "invalid resquest", http.StatusBadRequest)
 				return
 			}
@@ -138,7 +138,7 @@ func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 			case "gauge":
 				if valid && m.Value != nil {
 					if err := repo.UpdateGauge(r.Context(), m.ID, *m.Value); err != nil {
-						log.Error().AnErr("UpdateGauge", err).Msg("UpdateBulkPost")
+						log.Debug().AnErr("UpdateGauge", err).Msg("UpdateBulkPost")
 						http.Error(w, "failed to update", http.StatusInternalServerError)
 						return
 					}
@@ -149,7 +149,7 @@ func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 			case "counter":
 				if valid && m.Delta != nil {
 					if err := repo.UpdateCounter(r.Context(), m.ID, *m.Delta); err != nil {
-						log.Error().AnErr("UpdateCounter", err).Msg("UpdateBulkPost")
+						log.Debug().AnErr("UpdateCounter", err).Msg("UpdateBulkPost")
 						http.Error(w, "failed to update", http.StatusInternalServerError)
 						return
 					}

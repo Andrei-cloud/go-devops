@@ -91,10 +91,18 @@ func (c *collector) CollectExtra() {
 }
 
 func (c *collector) GetGauges() map[string]float64 {
-	return c.gauges
+	gauges := make(map[string]float64)
+	c.mu.RLock()
+	for k, v := range c.gauges {
+		gauges[k] = v
+	}
+	c.mu.RUnlock()
+	return gauges
 }
 
 func (c *collector) GetCounter() map[string]int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return map[string]int64{
 		"PollCount": c.counter,
 	}

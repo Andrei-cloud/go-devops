@@ -1,6 +1,9 @@
 package router
 
 import (
+	"net/http"
+	"net/http/pprof"
+
 	"github.com/andrei-cloud/go-devops/internal/handlers"
 	mw "github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/repo"
@@ -21,6 +24,19 @@ func SetupRouter(repo repo.Repository, key []byte) *chi.Mux {
 	r.Post("/update/", handlers.UpdatePost(repo))
 	r.Post("/updates/", handlers.UpdateBulkPost(repo))
 	r.Post("/value/", handlers.GetMetricsPost(repo))
+
+	return r
+}
+
+func WithPPROF(r *chi.Mux) *chi.Mux {
+	r.Handle("/debug/pprof", http.HandlerFunc(pprof.Index))
+	r.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+	r.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+	r.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+	r.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	r.Handle("/debug/pprof/block", pprof.Handler("block"))
+	r.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	r.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 
 	return r
 }
