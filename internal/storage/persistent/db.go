@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/andrei-cloud/go-devops/internal/repo"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/rs/zerolog/log"
+
+	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
 type storage struct {

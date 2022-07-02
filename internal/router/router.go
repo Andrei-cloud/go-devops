@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"net/http/pprof"
 
+	"github.com/go-chi/chi"
+	"github.com/rs/zerolog/log"
+
 	"github.com/andrei-cloud/go-devops/internal/handlers"
 	mw "github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/repo"
-	"github.com/go-chi/chi"
-	"github.com/rs/zerolog/log"
 )
 
 func SetupRouter(repo repo.Repository, key []byte) *chi.Mux {

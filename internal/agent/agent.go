@@ -11,12 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/andrei-cloud/go-devops/internal/collector"
-	"github.com/andrei-cloud/go-devops/internal/hash"
-	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/caarlos0/env"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/andrei-cloud/go-devops/internal/collector"
+	"github.com/andrei-cloud/go-devops/internal/hash"
+	"github.com/andrei-cloud/go-devops/internal/model"
 )
 
 var (

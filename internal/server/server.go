@@ -10,6 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/caarlos0/env"
+	"github.com/go-chi/chi"
+
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/andrei-cloud/go-devops/internal/storage/filestore"
@@ -17,9 +20,6 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-
-	"github.com/caarlos0/env"
-	"github.com/go-chi/chi"
 )
 
 var cfg Config

@@ -6,10 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/andrei-cloud/go-devops/internal/router"
-	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/andrei-cloud/go-devops/internal/router"
+	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
 )
 
 func TestUpdate(t *testing.T) {

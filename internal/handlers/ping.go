@@ -3,8 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/rs/zerolog/log"
+
+	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
 func Ping(db repo.Repository) http.HandlerFunc {

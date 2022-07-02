@@ -6,9 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/andrei-cloud/go-devops/internal/agent"
 	"github.com/andrei-cloud/go-devops/internal/collector"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
