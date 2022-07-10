@@ -1,3 +1,4 @@
+// Package hash provides hashing functionality.
 package hash
 
 import (
@@ -9,12 +10,14 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/model"
 )
 
+// Create - creates SHA256 hash for given string using provided key.
 func Create(src string, key []byte) string {
 	h := hmac.New(sha256.New, key)
 	h.Write([]byte(src))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+// Validate - checks if given metric and it's hash is valid for key provided.
 func Validate(m model.Metric, key []byte) (bool, error) {
 	var data string
 	if len(key) == 0 {

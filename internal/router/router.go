@@ -1,3 +1,4 @@
+// Pakage provides functions to setup router for http server.
 package router
 
 import (
@@ -12,6 +13,9 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
+// SetupRouter -  Function setup chi router for handdlers and required middlewares
+//     repo - take entity implementing Repository interface
+//     key - slice of bytes of key for hash validation.
 func SetupRouter(repo repo.Repository, key []byte) *chi.Mux {
 	log.Debug().Msg("Setting up the router")
 	r := chi.NewRouter()
@@ -29,6 +33,8 @@ func SetupRouter(repo repo.Repository, key []byte) *chi.Mux {
 	return r
 }
 
+// WithPPROF - Function to setup router for PPROF handlers
+//    r tange chu router to enrach with pprof handlers.
 func WithPPROF(r *chi.Mux) *chi.Mux {
 	r.Handle("/debug/pprof", http.HandlerFunc(pprof.Index))
 	r.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))

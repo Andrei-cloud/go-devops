@@ -1,3 +1,5 @@
+// Package agent implements the agent functionality for collecting and sending metrics
+// for observing machine.
 package agent
 
 import (
@@ -25,13 +27,14 @@ var (
 	cfg     Config
 )
 
+// Config - type for agent configuration.
 type Config struct {
-	Address   string        `env:"ADDRESS"`
-	ReportInt time.Duration `env:"REPORT_INTERVAL"`
-	PollInt   time.Duration `env:"POLL_INTERVAL"`
-	Key       string        `env:"KEY"`
-	IsBulk    bool
-	Debug     bool
+	Address   string        `env:"ADDRESS"`         //  address of metric server
+	ReportInt time.Duration `env:"REPORT_INTERVAL"` //  interval for metrics reporting
+	PollInt   time.Duration `env:"POLL_INTERVAL"`   // interval for metrics polling
+	Key       string        `env:"KEY"`             // key for metrics hashing
+	IsBulk    bool          // flag to send metrics in bulk
+	Debug     bool          // debug flag
 }
 
 type agent struct {
@@ -80,6 +83,7 @@ func init() {
 	baseURL = fmt.Sprintf("http://%s/update", cfg.Address)
 }
 
+// Creates new insatce of the agent.
 func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	a := &agent{}
 	if cl == nil {
@@ -95,6 +99,7 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	return a
 }
 
+// Run main agent loop.
 func (a *agent) Run(ctx context.Context) {
 	if cfg.Debug {
 		go func() {
@@ -163,6 +168,7 @@ func (a *agent) Run(ctx context.Context) {
 	log.Info().Msg("Agent stopping")
 }
 
+//ReportCounter - reports counter metric to the sever.
 func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 	var url string
 	for k, v := range m {
@@ -186,6 +192,7 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 	}
 }
 
+//ReportGauge - reports gauge metric to the sever.
 func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 	var url string
 	for k, v := range m {
@@ -209,6 +216,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 	}
 }
 
+//ReportCounterPost - reports counter metric to the sever.
 func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 	var url string
 	metric := model.Metric{}
@@ -247,6 +255,7 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 	}
 }
 
+//ReportGaugePost - reports gauge metric to the sever.
 func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 	var url string
 	metric := model.Metric{}
@@ -285,6 +294,7 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 	}
 }
 
+//ReportBulkPost - reports metrics in bulk to the sever.
 func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[string]float64) {
 	var url string
 	metrics := []model.Metric{}

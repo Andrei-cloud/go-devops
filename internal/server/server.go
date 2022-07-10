@@ -1,3 +1,4 @@
+// Package server implements server for collecting metrics from agent cleints.
 package server
 
 import (
@@ -12,27 +13,28 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/go-chi/chi"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/andrei-cloud/go-devops/internal/storage/filestore"
 	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
 	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 var cfg Config
 
+// Config - type for server configuration.
 type Config struct {
-	Address  string        `env:"ADDRESS"`
-	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"`
-	Interval time.Duration `env:"STORE_INTERVAL"`
-	FilePath string        `env:"STORE_FILE"`
-	Restore  bool          `env:"RESTORE" envDefault:"true"`
-	Key      string        `env:"KEY"`
-	Dsn      string        `env:"DATABASE_DSN"`
-	Debug    bool
+	Address  string        `env:"ADDRESS"`                          // address server to bind on
+	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"` // time to wait for server shutdown
+	Interval time.Duration `env:"STORE_INTERVAL"`                   // interval store metrics in persistemnt repository
+	FilePath string        `env:"STORE_FILE"`                       // path to the file to store metrics
+	Restore  bool          `env:"RESTORE" envDefault:"true"`        // restore metrics from file upon server start
+	Key      string        `env:"KEY"`                              // key used for hash verifications
+	Dsn      string        `env:"DATABASE_DSN"`                     // dadabase connection string
+	Debug    bool          // debug mode enables additional logging and profile enpoints
 }
 
 type server struct {
@@ -86,6 +88,7 @@ func init() {
 	}
 }
 
+// NewServer - sreates new server instance with all ingected dependencies.
 func NewServer() *server {
 	srv := server{}
 	srv.repo = inmem.New()
@@ -123,6 +126,7 @@ func NewServer() *server {
 	return &srv
 }
 
+// Run - non blocking function starting up the server.
 func (srv *server) Run(ctx context.Context) {
 	if cfg.Dsn == "" && cfg.FilePath != "" {
 		if cfg.Restore {
@@ -153,6 +157,12 @@ func (srv *server) Run(ctx context.Context) {
 
 }
 
+// Shutdown - blocking function waiting signal to shutdown the server
+// signals to shutdown server:
+//   os.Interrupt
+//   syscall.SIGTERM
+//   syscall.SIGQUIT
+// Server will be forcefuly stopped after shutdown Timeout.
 func (srv *server) Shutdown() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)

@@ -8,6 +8,7 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
+//Ping - implements ping handler to validate connectivity status with DB.
 func Ping(db repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(); err != nil {

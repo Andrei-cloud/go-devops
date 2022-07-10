@@ -1,3 +1,4 @@
+// Package filestore provides storage functions from/to repository form/into file.
 package filestore
 
 import (
@@ -14,17 +15,24 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
+// Filestore defines interface for storing and resporing information
+// from repository provideing two methods:
+//   Store - stores data from repository, returns error if failed
+//   Restore - retrived data form file into repository, returns error if  failed.
 type Filestore interface {
 	Store(repo.Repository) error
 	Restore(repo.Repository) error
 }
 
+// Base fileSorage structure.
 type FileStorage struct {
+	// File name for storage.
 	filename string
 }
 
 var _ Filestore = (*FileStorage)(nil)
 
+// NewFileStorage - creates and instance of FileStorage on file with filename.
 func NewFileStorage(filename string) *FileStorage {
 	return &FileStorage{
 		filename: filename,
@@ -39,6 +47,7 @@ func (s *FileStorage) open() (*os.File, error) {
 	return os.OpenFile(s.filename, os.O_RDONLY|os.O_CREATE, 0777)
 }
 
+// Store - stores the date from repository to file.
 func (s *FileStorage) Store(repo repo.Repository) error {
 	file, err := s.openOW()
 	if err != nil {
@@ -80,6 +89,7 @@ func (s *FileStorage) Store(repo repo.Repository) error {
 	return writer.Flush()
 }
 
+// Restore - respores the data from file to repository.
 func (s *FileStorage) Restore(repo repo.Repository) error {
 	file, err := s.open()
 	if err != nil {
