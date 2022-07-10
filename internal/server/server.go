@@ -48,11 +48,11 @@ type server struct {
 func init() {
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	restorePtr := flag.Bool("r", true, "restore previous values")
-	intervalPtr := flag.Duration("i", 10*time.Second, "interval to store metrics")
+	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
 	filePtr := flag.String("f", "/tmp/devops-metrics-db.json", "file path to store metrics")
-	keyPtr := flag.String("k", "my_secret", "secret key")
-	dsnPtr := flag.String("d", "postgres://postgres:rootpassword@localhost:5432/go_devops", "database connection string")
-	debugPtr := flag.Bool("debug", true, "sets log level to debug")
+	keyPtr := flag.String("k", "", "secret key")
+	dsnPtr := flag.String("d", "", "database connection string")
+	debugPtr := flag.Bool("debug", false, "sets log level to debug")
 
 	flag.Parse()
 	cfg = Config{}
