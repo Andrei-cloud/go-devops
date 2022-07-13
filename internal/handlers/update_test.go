@@ -194,3 +194,80 @@ func TestUpdatePost(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateBulkPost(t *testing.T) {
+	tests := []struct {
+		name        string
+		method      string
+		contentType string
+		metrics     string
+		want        int
+	}{
+		{
+			name:        "test 1",
+			method:      http.MethodPost,
+			contentType: "text/plain",
+			metrics:     `[{"id":"Alloc","type":"gauge","value":1.45}]`,
+			want:        http.StatusInternalServerError,
+		},
+		{
+			name:        "test 2",
+			method:      http.MethodPost,
+			contentType: "application/json",
+			metrics:     `[{"id":"Alloc","type":"gauge","value":1.A45}]`,
+			want:        http.StatusInternalServerError,
+		},
+		{
+			name:        "test 3",
+			method:      http.MethodPost,
+			contentType: "application/json",
+			metrics:     `[{"id":"Alloc","type":"gauge","value":1.45}]`,
+			want:        http.StatusOK,
+		},
+		{
+			name:        "test 4",
+			method:      http.MethodPost,
+			contentType: "application/json",
+			metrics:     `[{"id":"Alloc","type":"gauge"}]`,
+			want:        http.StatusBadRequest,
+		},
+		{
+			name:        "test 5",
+			method:      http.MethodPost,
+			contentType: "",
+			metrics:     `[{"id":"Alloc","type":"gauge"}]`,
+			want:        http.StatusInternalServerError,
+		},
+		{
+			name:        "test 6",
+			method:      http.MethodPost,
+			contentType: "application/json",
+			metrics:     `[{"id":"Alloc","type":"unknown"}]`,
+			want:        http.StatusNotImplemented,
+		},
+		{
+			name:        "test 7",
+			method:      http.MethodPost,
+			contentType: "application/json",
+			metrics:     `[{"id":"PollCount","type":"counter","delta":345}]`,
+			want:        http.StatusOK,
+		},
+	}
+
+	r := router.SetupRouter(inmem.New(), []byte{})
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request, err := http.NewRequest(tt.method, ts.URL+"/updates/", strings.NewReader(tt.metrics))
+			require.NoError(t, err)
+			request.Header.Set("Content-Type", tt.contentType)
+
+			resp, err := http.DefaultClient.Do(request)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+			assert.Equal(t, tt.want, resp.StatusCode)
+		})
+	}
+}
