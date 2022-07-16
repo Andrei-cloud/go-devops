@@ -21,9 +21,9 @@ type Collector interface {
 }
 
 type collector struct {
-	counter int64
 	gauges  map[string]float64
 	mu      sync.RWMutex
+	counter int64
 }
 
 var _ Collector = &collector{}

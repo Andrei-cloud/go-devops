@@ -30,9 +30,9 @@ var (
 // Config - type for agent configuration.
 type Config struct {
 	Address   string        `env:"ADDRESS"`         //  address of metric server
+	Key       string        `env:"KEY"`             // key for metrics hashing
 	ReportInt time.Duration `env:"REPORT_INTERVAL"` //  interval for metrics reporting
 	PollInt   time.Duration `env:"POLL_INTERVAL"`   // interval for metrics polling
-	Key       string        `env:"KEY"`             // key for metrics hashing
 	IsBulk    bool          // flag to send metrics in bulk
 	Debug     bool          // debug flag
 }
@@ -40,9 +40,9 @@ type Config struct {
 type agent struct {
 	client         *http.Client
 	collector      collector.Collector
+	key            []byte
 	pollInterval   time.Duration
 	reportInterval time.Duration
-	key            []byte
 	isBulk         bool
 }
 

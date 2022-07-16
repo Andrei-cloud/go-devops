@@ -141,7 +141,7 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&id, &value)
+		err = rows.Scan(&id, &value)
 		if err != nil {
 			return gauges, err
 		}
@@ -173,7 +173,7 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&id, &delta)
+		err = rows.Scan(&id, &delta)
 		if err != nil {
 			return counters, err
 		}

@@ -28,12 +28,12 @@ var cfg Config
 // Config - type for server configuration.
 type Config struct {
 	Address  string        `env:"ADDRESS"`                          // address server to bind on
-	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"` // time to wait for server shutdown
-	Interval time.Duration `env:"STORE_INTERVAL"`                   // interval store metrics in persistemnt repository
-	FilePath string        `env:"STORE_FILE"`                       // path to the file to store metrics
-	Restore  bool          `env:"RESTORE" envDefault:"true"`        // restore metrics from file upon server start
 	Key      string        `env:"KEY"`                              // key used for hash verifications
 	Dsn      string        `env:"DATABASE_DSN"`                     // dadabase connection string
+	FilePath string        `env:"STORE_FILE"`                       // path to the file to store metrics
+	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"` // time to wait for server shutdown
+	Interval time.Duration `env:"STORE_INTERVAL"`                   // interval store metrics in persistemnt repository
+	Restore  bool          `env:"RESTORE" envDefault:"true"`        // restore metrics from file upon server start
 	Debug    bool          // debug mode enables additional logging and profile enpoints
 }
 
