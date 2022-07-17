@@ -1,3 +1,4 @@
+// Package collector provides functionality for metrics.
 package collector
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
+// Main collector interface
 type Collector interface {
 	Collect()
 	CollectExtra()
@@ -26,6 +28,7 @@ type collector struct {
 
 var _ Collector = &collector{}
 
+// Create new instance of metrics collector
 func NewCollector() *collector {
 	c := &collector{}
 	c.gauges = make(map[string]float64)
@@ -38,6 +41,7 @@ func (c *collector) setGauge(key string, value float64) {
 	c.gauges[key] = value
 }
 
+//Collect - method to collect metrics provided by runtime standard go package.
 func (c *collector) Collect() {
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
@@ -74,6 +78,7 @@ func (c *collector) Collect() {
 	c.counter++
 }
 
+//CollectExtra - method to collect additional metrics provided by gopsutil package.
 func (c *collector) CollectExtra() {
 	var p []float64
 	m, err := mem.VirtualMemory()
@@ -90,11 +95,21 @@ func (c *collector) CollectExtra() {
 	}
 }
 
+// GetGauges - method to get all metrics of type gauge.
 func (c *collector) GetGauges() map[string]float64 {
-	return c.gauges
+	gauges := make(map[string]float64)
+	c.mu.RLock()
+	for k, v := range c.gauges {
+		gauges[k] = v
+	}
+	c.mu.RUnlock()
+	return gauges
 }
 
+// Get Counter - method to get a counter metrics.
 func (c *collector) GetCounter() map[string]int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return map[string]int64{
 		"PollCount": c.counter,
 	}

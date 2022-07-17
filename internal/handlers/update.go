@@ -5,14 +5,17 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi"
+	"github.com/rs/zerolog/log"
+
 	"github.com/andrei-cloud/go-devops/internal/hash"
 	mw "github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/andrei-cloud/go-devops/internal/repo"
-	"github.com/go-chi/chi"
-	"github.com/rs/zerolog/log"
 )
 
+//Update - implements handler for "/update/{m_type}/{m_name}/{value}".
+//Handler accepts metric parameters via URL parameters in POST request.
 func Update(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metricType := chi.URLParam(r, "m_type")
@@ -53,6 +56,8 @@ func Update(repo repo.Repository) http.HandlerFunc {
 	}
 }
 
+//UpdatePost - implements handler for "/update/".
+//Handler accepts metric parameters via POST request body.
 func UpdatePost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var key []byte
@@ -108,6 +113,9 @@ func UpdatePost(repo repo.Repository) http.HandlerFunc {
 	}
 }
 
+//UpdateBulkPost - implements handler for "/updates/" in bulk.
+//Multiple metrics cann be updated at the same time.
+//Handler accepts metric parameters via POST request body.
 func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var key []byte
@@ -122,14 +130,14 @@ func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 
 		metrics := []model.Metric{}
 		if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
-			log.Error().AnErr("Decode", err).Msg("UpdateBulkPost")
+			log.Debug().AnErr("Decode", err).Msg("UpdateBulkPost")
 			http.Error(w, "invalid resquest", http.StatusInternalServerError)
 		}
 
 		for _, m := range metrics {
 			valid, err := hash.Validate(m, key)
 			if err != nil {
-				log.Error().AnErr("Validate", err).Msg("UpdateBulkPost")
+				log.Debug().AnErr("Validate", err).Msg("UpdateBulkPost")
 				http.Error(w, "invalid resquest", http.StatusBadRequest)
 				return
 			}
@@ -138,7 +146,7 @@ func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 			case "gauge":
 				if valid && m.Value != nil {
 					if err := repo.UpdateGauge(r.Context(), m.ID, *m.Value); err != nil {
-						log.Error().AnErr("UpdateGauge", err).Msg("UpdateBulkPost")
+						log.Debug().AnErr("UpdateGauge", err).Msg("UpdateBulkPost")
 						http.Error(w, "failed to update", http.StatusInternalServerError)
 						return
 					}
@@ -149,7 +157,7 @@ func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 			case "counter":
 				if valid && m.Delta != nil {
 					if err := repo.UpdateCounter(r.Context(), m.ID, *m.Delta); err != nil {
-						log.Error().AnErr("UpdateCounter", err).Msg("UpdateBulkPost")
+						log.Debug().AnErr("UpdateCounter", err).Msg("UpdateBulkPost")
 						http.Error(w, "failed to update", http.StatusInternalServerError)
 						return
 					}

@@ -26,10 +26,13 @@ type gzipWriter struct {
 	Writer io.Writer
 }
 
+// Implementation of io.Writer interface for gzipWriter.
 func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
+// GzipMW - middleware provides compression and decompression of request/response based on
+// header: Accept-Encoding value gzip.
 func GzipMW(next http.Handler) http.Handler {
 	var b bytes.Buffer
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

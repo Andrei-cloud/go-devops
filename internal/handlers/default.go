@@ -1,3 +1,4 @@
+// Package handlers implementa handler functions for HTTP requests
 package handlers
 
 import (
@@ -6,6 +7,7 @@ import (
 	"strings"
 )
 
+// Default - implements handler function for root/home handler.
 func Default() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Accept-Encoding", "gzip")

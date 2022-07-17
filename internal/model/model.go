@@ -1,5 +1,7 @@
+// This backage contain the model structre defining the Metric entity
 package model
 
+// Metric - The type defining a Metric entity.
 type Metric struct {
 	ID    string   `json:"id"`              // имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter

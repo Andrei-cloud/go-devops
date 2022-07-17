@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/andrei-cloud/go-devops/internal/server"
 	"github.com/rs/zerolog/log"
+
+	"github.com/andrei-cloud/go-devops/internal/server"
 )
 
 func main() {

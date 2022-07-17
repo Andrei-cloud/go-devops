@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi"
+	"github.com/rs/zerolog/log"
+
 	"github.com/andrei-cloud/go-devops/internal/hash"
 	mw "github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/model"
 	"github.com/andrei-cloud/go-devops/internal/repo"
-	"github.com/go-chi/chi"
-	"github.com/rs/zerolog/log"
 )
 
+// GetMetrics - implements handler function for "/value/{m_type}/{m_name}" handler.
+// Handler return the value of metric {m_name} of {m_type}.
 func GetMetrics(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metricType := chi.URLParam(r, "m_type")
@@ -22,7 +25,7 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 		case "gauge":
 			result, err := repo.GetGauge(r.Context(), metricName)
 			if err != nil {
-				log.Error().AnErr("UpdatePost", err).Msg("GetMetrics")
+				log.Error().AnErr("GetGauge", err).Msg("GetMetrics")
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
@@ -30,7 +33,7 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 		case "counter":
 			result, err := repo.GetCounter(r.Context(), metricName)
 			if err != nil {
-				log.Error().AnErr("UpdatePost", err).Msg("GetMetrics")
+				log.Error().AnErr("GetCounter", err).Msg("GetMetrics")
 				http.Error(w, "not found", http.StatusNotFound)
 				return
 			}
@@ -42,6 +45,8 @@ func GetMetrics(repo repo.Repository) http.HandlerFunc {
 	}
 }
 
+// GetMetricsPost - implements handler function for "/value/" handler.
+// Handler return the value of metric requested in the body of th POST request.
 func GetMetricsPost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var key []byte
