@@ -1,8 +1,6 @@
 package main
 
 import (
-	"go/ast"
-
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/asmdecl"
@@ -50,6 +48,7 @@ import (
 	"honnef.co/go/tools/simple"
 	"honnef.co/go/tools/staticcheck"
 
+	"github.com/andrei-cloud/go-devops/cmd/staticlint/exitchecker"
 	gocheck "github.com/go-critic/go-critic/checkers/analyzer"
 )
 
@@ -108,49 +107,7 @@ func main() {
 	}
 
 	// go-checks and os.Exit Analyzer
-	analyzers = append(analyzers, gocheck.Analyzer, ExitCheckAnalyzer)
+	analyzers = append(analyzers, gocheck.Analyzer, exitchecker.ExitCheckAnalyzer)
 
 	multichecker.Main(analyzers...)
-}
-
-const Doc = `check for os.Exit in main() functions.
-
-The exit checker looks for :
-
-	os.Exit()
-
-calls in main() functions.`
-
-var ExitCheckAnalyzer = &analysis.Analyzer{
-	Name: "exitcheck",
-	Doc:  Doc,
-	Run:  checkExit,
-}
-
-// checkExit walks the os.Exit method calls in main() functions.
-func checkExit(pass *analysis.Pass) (interface{}, error) {
-	for _, file := range pass.Files {
-		ast.Inspect(file, func(node ast.Node) bool {
-			if x, ok := node.(*ast.FuncDecl); ok {
-				if x.Name.String() == "main" {
-					for _, stmt := range x.Body.List {
-						if exprStmt, ok := stmt.(*ast.ExprStmt); ok {
-							if call, ok := exprStmt.X.(*ast.CallExpr); ok {
-								if fun, ok := call.Fun.(*ast.SelectorExpr); ok {
-									pkg, ok := fun.X.(*ast.Ident)
-									if ok {
-										if (pkg.Name + "." + fun.Sel.Name) == "os.Exit" {
-											pass.ReportRangef(exprStmt, "has os.Exit function")
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			return true
-		})
-	}
-	return nil, nil
 }
