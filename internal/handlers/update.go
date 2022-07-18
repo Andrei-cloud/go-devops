@@ -14,8 +14,8 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
-//Update - implements handler for "/update/{m_type}/{m_name}/{value}".
-//Handler accepts metric parameters via URL parameters in POST request.
+// Update - implements handler for "/update/{m_type}/{m_name}/{value}".
+// Handler accepts metric parameters via URL parameters in POST request.
 func Update(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		metricType := chi.URLParam(r, "m_type")
@@ -56,8 +56,8 @@ func Update(repo repo.Repository) http.HandlerFunc {
 	}
 }
 
-//UpdatePost - implements handler for "/update/".
-//Handler accepts metric parameters via POST request body.
+// UpdatePost - implements handler for "/update/".
+// Handler accepts metric parameters via POST request body.
 func UpdatePost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var key []byte
@@ -113,9 +113,9 @@ func UpdatePost(repo repo.Repository) http.HandlerFunc {
 	}
 }
 
-//UpdateBulkPost - implements handler for "/updates/" in bulk.
-//Multiple metrics cann be updated at the same time.
-//Handler accepts metric parameters via POST request body.
+// UpdateBulkPost - implements handler for "/updates/" in bulk.
+// Multiple metrics cann be updated at the same time.
+// Handler accepts metric parameters via POST request body.
 func UpdateBulkPost(repo repo.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var key []byte

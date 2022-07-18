@@ -22,17 +22,17 @@ var _ repo.Repository = &storage{}
 func NewDB(dsn string) *storage {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		log.Fatal().AnErr("Open", err).Msg("NewDB")
+		log.Error().AnErr("Open", err).Msg("NewDB")
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
-		log.Fatal().AnErr("PingContext", err).Msg("NewDB")
+		log.Error().AnErr("PingContext", err).Msg("NewDB")
 		return nil
 	}
 	if err := createTable(ctx, db); err != nil {
-		log.Fatal().AnErr("createTable", err).Msg("NewDB")
+		log.Error().AnErr("createTable", err).Msg("NewDB")
 		return nil
 	}
 	return &storage{db}

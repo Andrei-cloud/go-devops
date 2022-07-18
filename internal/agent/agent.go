@@ -168,7 +168,7 @@ func (a *agent) Run(ctx context.Context) {
 	log.Info().Msg("Agent stopping")
 }
 
-//ReportCounter - reports counter metric to the sever.
+// ReportCounter - reports counter metric to the sever.
 func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 	var url string
 	for k, v := range m {
@@ -192,7 +192,7 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 	}
 }
 
-//ReportGauge - reports gauge metric to the sever.
+// ReportGauge - reports gauge metric to the sever.
 func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 	var url string
 	for k, v := range m {
@@ -216,7 +216,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 	}
 }
 
-//ReportCounterPost - reports counter metric to the sever.
+// ReportCounterPost - reports counter metric to the sever.
 func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 	var url string
 	metric := model.Metric{}
@@ -255,7 +255,7 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 	}
 }
 
-//ReportGaugePost - reports gauge metric to the sever.
+// ReportGaugePost - reports gauge metric to the sever.
 func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 	var url string
 	metric := model.Metric{}
@@ -294,7 +294,7 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 	}
 }
 
-//ReportBulkPost - reports metrics in bulk to the sever.
+// ReportBulkPost - reports metrics in bulk to the sever.
 func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[string]float64) {
 	var url string
 	metrics := []model.Metric{}

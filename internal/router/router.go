@@ -19,7 +19,6 @@ import (
 func SetupRouter(repo repo.Repository, key []byte) *chi.Mux {
 	log.Debug().Msg("Setting up the router")
 	r := chi.NewRouter()
-	//r.Use(middleware.Logger)
 	r.Use(mw.GzipMW, mw.KeyInject(key))
 	r.Get("/", handlers.Default())
 	r.Get("/value/{m_type}/{m_name}", handlers.GetMetrics(repo))
