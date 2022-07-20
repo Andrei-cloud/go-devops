@@ -1,4 +1,4 @@
-//Package inmem implements in memory repository.
+// Package inmem implements in memory repository.
 package inmem
 
 import (
