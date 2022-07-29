@@ -18,7 +18,9 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/andrei-cloud/go-devops/internal/collector"
+	"github.com/andrei-cloud/go-devops/internal/encrypt"
 	"github.com/andrei-cloud/go-devops/internal/hash"
+	"github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/model"
 )
 
@@ -29,9 +31,10 @@ var (
 
 // Config - type for agent configuration.
 type Config struct {
-	Address   string        `env:"ADDRESS"`         //  address of metric server
+	Address   string        `env:"ADDRESS"`         // address of metric server
 	Key       string        `env:"KEY"`             // key for metrics hashing
-	ReportInt time.Duration `env:"REPORT_INTERVAL"` //  interval for metrics reporting
+	CryptoKey string        `env:"CRYPTO_KEY"`      // key for encryption of metrics
+	ReportInt time.Duration `env:"REPORT_INTERVAL"` // interval for metrics reporting
 	PollInt   time.Duration `env:"POLL_INTERVAL"`   // interval for metrics polling
 	IsBulk    bool          // flag to send metrics in bulk
 	Debug     bool          // debug flag
@@ -53,6 +56,7 @@ func init() {
 	keyPtr := flag.String("k", "", "secret key")
 	modePtr := flag.Bool("b", true, "bulk mode")
 	debugPtr := flag.Bool("debug", false, "sets log level to debug")
+	cryptokeyPtr := flag.String("cyptokey", "", "path to private key file")
 
 	flag.Parse()
 	cfg = Config{}
@@ -72,6 +76,10 @@ func init() {
 		cfg.Key = *keyPtr
 	}
 	cfg.IsBulk = *modePtr
+
+	if cfg.CryptoKey == "" {
+		cfg.CryptoKey = *cryptokeyPtr
+	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if *debugPtr {
@@ -96,6 +104,15 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	if cfg.Key != "" {
 		a.key = []byte(cfg.Key)
 	}
+	if cfg.CryptoKey != "" {
+		a = a.WithEncrypter(encrypt.New(cfg.CryptoKey))
+	}
+
+	return a
+}
+
+func (a *agent) WithEncrypter(e encrypt.Encrypter) *agent {
+	a.client.Transport = middlewares.NewCryptoRT(e)
 	return a
 }
 

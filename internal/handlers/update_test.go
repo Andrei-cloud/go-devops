@@ -100,7 +100,7 @@ func TestUpdate(t *testing.T) {
 		},
 	}
 
-	r := router.SetupRouter(inmem.New(), []byte{})
+	r := router.SetupRouter(inmem.New(), []byte{}, nil)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -177,7 +177,7 @@ func TestUpdatePost(t *testing.T) {
 		},
 	}
 
-	r := router.SetupRouter(inmem.New(), []byte{})
+	r := router.SetupRouter(inmem.New(), []byte{}, nil)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -254,7 +254,7 @@ func TestUpdateBulkPost(t *testing.T) {
 		},
 	}
 
-	r := router.SetupRouter(inmem.New(), []byte{})
+	r := router.SetupRouter(inmem.New(), []byte{}, nil)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
