@@ -11,6 +11,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type any interface{}
+
 type Encrypter interface {
 	Encrypt(b []byte) ([]byte, error)
 	Decrypt(b []byte) ([]byte, error)
