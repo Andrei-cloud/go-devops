@@ -18,6 +18,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/andrei-cloud/go-devops/internal/collector"
+	"github.com/andrei-cloud/go-devops/internal/config"
 	"github.com/andrei-cloud/go-devops/internal/encrypt"
 	"github.com/andrei-cloud/go-devops/internal/hash"
 	"github.com/andrei-cloud/go-devops/internal/middlewares"
@@ -26,19 +27,10 @@ import (
 
 var (
 	baseURL string
-	cfg     Config
-)
+	cfg     config.AgentConfig
 
-// Config - type for agent configuration.
-type Config struct {
-	Address   string        `env:"ADDRESS"`         // address of metric server
-	Key       string        `env:"KEY"`             // key for metrics hashing
-	CryptoKey string        `env:"CRYPTO_KEY"`      // key for encryption of metrics
-	ReportInt time.Duration `env:"REPORT_INTERVAL"` // interval for metrics reporting
-	PollInt   time.Duration `env:"POLL_INTERVAL"`   // interval for metrics polling
-	IsBulk    bool          // flag to send metrics in bulk
-	Debug     bool          // debug flag
-}
+	configPath = flag.String("config", "", "path to config file")
+)
 
 type agent struct {
 	client         *http.Client
@@ -50,6 +42,8 @@ type agent struct {
 }
 
 func init() {
+	flag.StringVar(configPath, "c", "", "path to config file")
+
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	reportPtr := flag.Duration("r", 10*time.Second, "restore previous values")
 	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
@@ -59,7 +53,12 @@ func init() {
 	cryptokeyPtr := flag.String("cyptokey", "", "path to private key file")
 
 	flag.Parse()
-	cfg = Config{}
+
+	cfg = config.AgentConfig{}
+	if configPath != nil && *configPath != "" {
+		config.ReadConfigFile(*configPath, &cfg)
+	}
+
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal().AnErr("init", err).Msg("init")
 	}

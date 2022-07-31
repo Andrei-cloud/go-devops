@@ -16,6 +16,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/andrei-cloud/go-devops/internal/config"
 	"github.com/andrei-cloud/go-devops/internal/encrypt"
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/andrei-cloud/go-devops/internal/router"
@@ -24,20 +25,10 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
 )
 
-var cfg Config
-
-// Config - type for server configuration.
-type Config struct {
-	Address   string        `env:"ADDRESS"`                          // address server to bind on
-	Key       string        `env:"KEY"`                              // key used for hash verifications
-	Dsn       string        `env:"DATABASE_DSN"`                     // dadabase connection string
-	FilePath  string        `env:"STORE_FILE"`                       // path to the file to store metrics
-	CryptoKey string        `env:"CRYPTO_KEY"`                       // key for encryption of metrics
-	Shutdown  time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"` // time to wait for server shutdown
-	Interval  time.Duration `env:"STORE_INTERVAL"`                   // interval store metrics in persistemnt repository
-	Restore   bool          `env:"RESTORE" envDefault:"true"`        // restore metrics from file upon server start
-	Debug     bool          // debug mode enables additional logging and profile enpoints
-}
+var (
+	cfg        config.ServerConfig
+	configPath = flag.String("config", "", "path to config file")
+)
 
 type server struct {
 	r    *chi.Mux
@@ -48,6 +39,8 @@ type server struct {
 }
 
 func init() {
+	flag.StringVar(configPath, "c", "", "path to config file")
+
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	restorePtr := flag.Bool("r", true, "restore previous values")
 	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
@@ -58,7 +51,11 @@ func init() {
 	cryptokeyPtr := flag.String("cyptokey", "", "path to private key file")
 
 	flag.Parse()
-	cfg = Config{}
+	cfg = config.ServerConfig{}
+	if configPath != nil && *configPath != "" {
+		config.ReadConfigFile(*configPath, cfg)
+	}
+
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal().AnErr("Parse", err).Msg("init")
 	}
