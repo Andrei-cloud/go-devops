@@ -68,11 +68,7 @@ func (s *storage) Ping() error {
 // return error if failed.
 func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 	log.Debug().Str("metric", g).Float64("value", v).Msg("DB UpdateGauge")
-	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) 
-	values ($1, 'gauge', $2)
-	on conflict (id)
-	do
-	update set value = $2;`, g, v)
+	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) values ($1, 'gauge', $2) on conflict (id) do update set value = $2;`, g, v)
 	if err != nil {
 		return err
 	}
