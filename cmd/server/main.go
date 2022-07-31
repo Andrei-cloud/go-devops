@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
 
 	"github.com/rs/zerolog/log"
 
@@ -28,10 +30,11 @@ func main() {
 	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 	s := server.NewServer()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
 	s.Run(ctx)
 
-	s.Shutdown() // blocking function
+	s.Shutdown(ctx) // blocking function
 	cancel()
 	log.Info().Msg("server quit")
 }

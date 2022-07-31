@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -33,16 +32,9 @@ func main() {
 	collector := collector.NewCollector()
 	agent := agent.NewAgent(collector, nil)
 
-	ctx, cancel := context.WithCancel(context.Background())
-
-	go func() {
-		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-		<-sig
-
-		cancel()
-	}()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	agent.Run(ctx)
+	cancel()
 	log.Info().Msg("agent quit")
 }

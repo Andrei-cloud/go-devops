@@ -6,9 +6,6 @@ import (
 	"flag"
 
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/caarlos0/env"
@@ -171,11 +168,8 @@ func (srv *server) Run(ctx context.Context) {
 //   syscall.SIGTERM
 //   syscall.SIGQUIT
 // Server will be forcefuly stopped after shutdown Timeout.
-func (srv *server) Shutdown() {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-	<-sig
-
+func (srv *server) Shutdown(ctx context.Context) {
+	<-ctx.Done()
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Shutdown)
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
