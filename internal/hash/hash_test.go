@@ -2,6 +2,7 @@ package hash
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/andrei-cloud/go-devops/internal/model"
 )
@@ -46,4 +47,89 @@ func ExampleValidate() {
 	// Output:
 	// true
 	// false
+}
+
+func TestValidate(t *testing.T) {
+	gaugeValue := 1.234
+	counterValue := int64(1234)
+	key := []byte("secret")
+	type args struct {
+		m   model.Metric
+		key []byte
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			"success gauge",
+			args{
+				model.Metric{
+					ID:    "test",
+					MType: "gauge",
+					Value: &gaugeValue,
+					Hash:  Create(fmt.Sprintf("%s:gauge:%f", "test", gaugeValue), key),
+				},
+				key,
+			},
+			true,
+			false,
+		},
+		{
+			"success counter",
+			args{
+				model.Metric{
+					ID:    "test",
+					MType: "counter",
+					Delta: &counterValue,
+					Hash:  Create(fmt.Sprintf("%s:counter:%d", "test", counterValue), key),
+				},
+				key,
+			},
+			true,
+			false,
+		},
+		{
+			"no key error",
+			args{
+				model.Metric{
+					ID:    "test",
+					MType: "counter",
+					Delta: &counterValue,
+					Hash:  Create(fmt.Sprintf("%s:counter:%d", "test", counterValue), key),
+				},
+				nil,
+			},
+			true,
+			false,
+		},
+		{
+			"not valid",
+			args{
+				model.Metric{
+					ID:    "test",
+					MType: "counter",
+					Delta: &counterValue,
+					Hash:  Create(fmt.Sprintf("%s:counter:%d", "fail", counterValue), key),
+				},
+				key,
+			},
+			false,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Validate(tt.args.m, tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Validate() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

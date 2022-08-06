@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog/log"
 
+	"github.com/andrei-cloud/go-devops/internal/encrypt"
 	"github.com/andrei-cloud/go-devops/internal/handlers"
 	mw "github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/repo"
@@ -16,11 +17,10 @@ import (
 // SetupRouter -  Function setup chi router for handdlers and required middlewares
 //     repo - take entity implementing Repository interface
 //     key - slice of bytes of key for hash validation.
-func SetupRouter(repo repo.Repository, key []byte) *chi.Mux {
+func SetupRouter(repo repo.Repository, key []byte, e encrypt.Encrypter) *chi.Mux {
 	log.Debug().Msg("Setting up the router")
 	r := chi.NewRouter()
-	//r.Use(middleware.Logger)
-	r.Use(mw.GzipMW, mw.KeyInject(key))
+	r.Use(mw.CryptoMW(e), mw.GzipMW, mw.KeyInject(key))
 	r.Get("/", handlers.Default())
 	r.Get("/value/{m_type}/{m_name}", handlers.GetMetrics(repo))
 	r.Get("/ping", handlers.Ping(repo))

@@ -21,9 +21,9 @@ type Collector interface {
 }
 
 type collector struct {
-	counter int64
 	gauges  map[string]float64
 	mu      sync.RWMutex
+	counter int64
 }
 
 var _ Collector = &collector{}
@@ -41,7 +41,7 @@ func (c *collector) setGauge(key string, value float64) {
 	c.gauges[key] = value
 }
 
-//Collect - method to collect metrics provided by runtime standard go package.
+// Collect - method to collect metrics provided by runtime standard go package.
 func (c *collector) Collect() {
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
@@ -78,7 +78,7 @@ func (c *collector) Collect() {
 	c.counter++
 }
 
-//CollectExtra - method to collect additional metrics provided by gopsutil package.
+// CollectExtra - method to collect additional metrics provided by gopsutil package.
 func (c *collector) CollectExtra() {
 	var p []float64
 	m, err := mem.VirtualMemory()

@@ -22,17 +22,17 @@ var _ repo.Repository = &storage{}
 func NewDB(dsn string) *storage {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		log.Fatal().AnErr("Open", err).Msg("NewDB")
+		log.Error().AnErr("Open", err).Msg("NewDB")
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
-		log.Fatal().AnErr("PingContext", err).Msg("NewDB")
+		log.Error().AnErr("PingContext", err).Msg("NewDB")
 		return nil
 	}
 	if err := createTable(ctx, db); err != nil {
-		log.Fatal().AnErr("createTable", err).Msg("NewDB")
+		log.Error().AnErr("createTable", err).Msg("NewDB")
 		return nil
 	}
 	return &storage{db}
@@ -68,11 +68,7 @@ func (s *storage) Ping() error {
 // return error if failed.
 func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 	log.Debug().Str("metric", g).Float64("value", v).Msg("DB UpdateGauge")
-	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) 
-	values ($1, 'gauge', $2)
-	on conflict (id)
-	do
-	update set value = $2;`, g, v)
+	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) values ($1, 'gauge', $2) on conflict (id) do update set value = $2;`, g, v)
 	if err != nil {
 		return err
 	}
@@ -141,7 +137,7 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&id, &value)
+		err = rows.Scan(&id, &value)
 		if err != nil {
 			return gauges, err
 		}
@@ -173,7 +169,7 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&id, &delta)
+		err = rows.Scan(&id, &delta)
 		if err != nil {
 			return counters, err
 		}

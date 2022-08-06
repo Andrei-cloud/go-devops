@@ -18,44 +18,47 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/andrei-cloud/go-devops/internal/collector"
+	"github.com/andrei-cloud/go-devops/internal/config"
+	"github.com/andrei-cloud/go-devops/internal/encrypt"
 	"github.com/andrei-cloud/go-devops/internal/hash"
+	"github.com/andrei-cloud/go-devops/internal/middlewares"
 	"github.com/andrei-cloud/go-devops/internal/model"
 )
 
 var (
 	baseURL string
-	cfg     Config
-)
+	cfg     config.AgentConfig
 
-// Config - type for agent configuration.
-type Config struct {
-	Address   string        `env:"ADDRESS"`         //  address of metric server
-	ReportInt time.Duration `env:"REPORT_INTERVAL"` //  interval for metrics reporting
-	PollInt   time.Duration `env:"POLL_INTERVAL"`   // interval for metrics polling
-	Key       string        `env:"KEY"`             // key for metrics hashing
-	IsBulk    bool          // flag to send metrics in bulk
-	Debug     bool          // debug flag
-}
+	configPath = flag.String("config", "", "path to config file")
+)
 
 type agent struct {
 	client         *http.Client
 	collector      collector.Collector
+	key            []byte
 	pollInterval   time.Duration
 	reportInterval time.Duration
-	key            []byte
 	isBulk         bool
 }
 
 func init() {
+	flag.StringVar(configPath, "c", "", "path to config file")
+
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	reportPtr := flag.Duration("r", 10*time.Second, "restore previous values")
 	pollPtr := flag.Duration("p", 2*time.Second, "interval to store metrics")
 	keyPtr := flag.String("k", "", "secret key")
 	modePtr := flag.Bool("b", true, "bulk mode")
 	debugPtr := flag.Bool("debug", false, "sets log level to debug")
+	cryptokeyPtr := flag.String("cyptokey", "", "path to private key file")
 
 	flag.Parse()
-	cfg = Config{}
+
+	cfg = config.AgentConfig{}
+	if configPath != nil && *configPath != "" {
+		config.ReadConfigFile(*configPath, &cfg)
+	}
+
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal().AnErr("init", err).Msg("init")
 	}
@@ -72,6 +75,10 @@ func init() {
 		cfg.Key = *keyPtr
 	}
 	cfg.IsBulk = *modePtr
+
+	if cfg.CryptoKey == "" {
+		cfg.CryptoKey = *cryptokeyPtr
+	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if *debugPtr {
@@ -96,6 +103,15 @@ func NewAgent(col collector.Collector, cl *http.Client) *agent {
 	if cfg.Key != "" {
 		a.key = []byte(cfg.Key)
 	}
+	if cfg.CryptoKey != "" {
+		a = a.WithEncrypter(encrypt.New(cfg.CryptoKey))
+	}
+
+	return a
+}
+
+func (a *agent) WithEncrypter(e encrypt.Encrypter) *agent {
+	a.client.Transport = middlewares.NewCryptoRT(e)
 	return a
 }
 
@@ -168,7 +184,7 @@ func (a *agent) Run(ctx context.Context) {
 	log.Info().Msg("Agent stopping")
 }
 
-//ReportCounter - reports counter metric to the sever.
+// ReportCounter - reports counter metric to the sever.
 func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 	var url string
 	for k, v := range m {
@@ -192,7 +208,7 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 	}
 }
 
-//ReportGauge - reports gauge metric to the sever.
+// ReportGauge - reports gauge metric to the sever.
 func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 	var url string
 	for k, v := range m {
@@ -216,7 +232,7 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 	}
 }
 
-//ReportCounterPost - reports counter metric to the sever.
+// ReportCounterPost - reports counter metric to the sever.
 func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 	var url string
 	metric := model.Metric{}
@@ -255,7 +271,7 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 	}
 }
 
-//ReportGaugePost - reports gauge metric to the sever.
+// ReportGaugePost - reports gauge metric to the sever.
 func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 	var url string
 	metric := model.Metric{}
@@ -294,7 +310,7 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 	}
 }
 
-//ReportBulkPost - reports metrics in bulk to the sever.
+// ReportBulkPost - reports metrics in bulk to the sever.
 func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[string]float64) {
 	var url string
 	metrics := []model.Metric{}

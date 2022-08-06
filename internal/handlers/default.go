@@ -9,7 +9,7 @@ import (
 
 // Default - implements handler function for root/home handler.
 func Default() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Add("Accept-Encoding", "gzip")
 		w.Header().Add("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)

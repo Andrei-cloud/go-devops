@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"os"
+	"fmt"
 	"os/signal"
 	"syscall"
 
@@ -12,20 +12,20 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/collector"
 )
 
+var (
+	buildVersion string = "N/A"
+	buildDate    string = "N/A"
+	buildCommit  string = "N/A"
+)
+
 func main() {
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n", buildVersion, buildDate, buildCommit)
 	collector := collector.NewCollector()
-	agent := agent.NewAgent(collector, nil)
+	a := agent.NewAgent(collector, nil)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer cancel()
 
-	go func() {
-		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-		<-sig
-
-		cancel()
-	}()
-
-	agent.Run(ctx)
+	a.Run(ctx)
 	log.Info().Msg("agent quit")
 }

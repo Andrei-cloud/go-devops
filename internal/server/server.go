@@ -6,9 +6,6 @@ import (
 	"flag"
 
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/caarlos0/env"
@@ -16,6 +13,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/andrei-cloud/go-devops/internal/config"
+	"github.com/andrei-cloud/go-devops/internal/encrypt"
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/andrei-cloud/go-devops/internal/storage/filestore"
@@ -23,19 +22,10 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
 )
 
-var cfg Config
-
-// Config - type for server configuration.
-type Config struct {
-	Address  string        `env:"ADDRESS"`                          // address server to bind on
-	Shutdown time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"5s"` // time to wait for server shutdown
-	Interval time.Duration `env:"STORE_INTERVAL"`                   // interval store metrics in persistemnt repository
-	FilePath string        `env:"STORE_FILE"`                       // path to the file to store metrics
-	Restore  bool          `env:"RESTORE" envDefault:"true"`        // restore metrics from file upon server start
-	Key      string        `env:"KEY"`                              // key used for hash verifications
-	Dsn      string        `env:"DATABASE_DSN"`                     // dadabase connection string
-	Debug    bool          // debug mode enables additional logging and profile enpoints
-}
+var (
+	cfg        config.ServerConfig
+	configPath = flag.String("config", "", "path to config file")
+)
 
 type server struct {
 	r    *chi.Mux
@@ -46,6 +36,8 @@ type server struct {
 }
 
 func init() {
+	flag.StringVar(configPath, "c", "", "path to config file")
+
 	addressPtr := flag.String("a", "localhost:8080", "server address format: host:port")
 	restorePtr := flag.Bool("r", true, "restore previous values")
 	intervalPtr := flag.Duration("i", 30*time.Second, "interval to store metrics")
@@ -53,9 +45,14 @@ func init() {
 	keyPtr := flag.String("k", "", "secret key")
 	dsnPtr := flag.String("d", "", "database connection string")
 	debugPtr := flag.Bool("debug", false, "sets log level to debug")
+	cryptokeyPtr := flag.String("cyptokey", "", "path to private key file")
 
 	flag.Parse()
-	cfg = Config{}
+	cfg = config.ServerConfig{}
+	if configPath != nil && *configPath != "" {
+		config.ReadConfigFile(*configPath, cfg)
+	}
+
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal().AnErr("Parse", err).Msg("init")
 	}
@@ -80,6 +77,10 @@ func init() {
 		cfg.Dsn = *dsnPtr
 	}
 
+	if cfg.CryptoKey == "" {
+		cfg.CryptoKey = *cryptokeyPtr
+	}
+
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if *debugPtr {
 		cfg.Debug = true
@@ -90,6 +91,7 @@ func init() {
 
 // NewServer - sreates new server instance with all ingected dependencies.
 func NewServer() *server {
+	var encr encrypt.Encrypter
 	srv := server{}
 	srv.repo = inmem.New()
 
@@ -108,7 +110,10 @@ func NewServer() *server {
 		srv.f = filestore.NewFileStorage(cfg.FilePath)
 	}
 
-	srv.r = router.SetupRouter(srv.repo, srv.key)
+	if cfg.CryptoKey != "" {
+		encr = encrypt.New(cfg.CryptoKey)
+	}
+	srv.r = router.SetupRouter(srv.repo, srv.key, encr)
 
 	if cfg.Debug {
 		srv.r = router.WithPPROF(srv.r)
@@ -163,11 +168,8 @@ func (srv *server) Run(ctx context.Context) {
 //   syscall.SIGTERM
 //   syscall.SIGQUIT
 // Server will be forcefuly stopped after shutdown Timeout.
-func (srv *server) Shutdown() {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-	<-sig
-
+func (srv *server) Shutdown(ctx context.Context) {
+	<-ctx.Done()
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Shutdown)
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
