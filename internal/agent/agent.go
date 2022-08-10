@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"sync"
@@ -197,6 +198,13 @@ func (a *agent) ReportCounter(ctx context.Context, m map[string]int64) {
 		}
 
 		req.Header.Set("Content-Type", "text/plain")
+		ip, _, err := net.SplitHostPort(req.RemoteAddr)
+		if err != nil {
+			log.Error().AnErr("SplitHostPort", err).Msg("ReportCounter")
+			return
+		} else {
+			req.Header.Set("X-Real-IP", ip)
+		}
 
 		resp, err := a.client.Do(req)
 		if err != nil {
@@ -221,6 +229,13 @@ func (a *agent) ReportGauge(ctx context.Context, m map[string]float64) {
 		}
 
 		req.Header.Set("Content-Type", "text/plain")
+		ip, _, err := net.SplitHostPort(req.RemoteAddr)
+		if err != nil {
+			log.Error().AnErr("SplitHostPort", err).Msg("ReportGauge")
+			return
+		} else {
+			req.Header.Set("X-Real-IP", ip)
+		}
 
 		resp, err := a.client.Do(req)
 		if err != nil {
@@ -260,6 +275,13 @@ func (a *agent) ReportCounterPost(ctx context.Context, m map[string]int64) {
 		}
 
 		req.Header.Set("Content-Type", "application/json")
+		ip, _, err := net.SplitHostPort(req.RemoteAddr)
+		if err != nil {
+			log.Error().AnErr("SplitHostPort", err).Msg("ReportCounterPost")
+			return
+		} else {
+			req.Header.Set("X-Real-IP", ip)
+		}
 
 		resp, err := a.client.Do(req)
 		if err != nil {
@@ -299,6 +321,13 @@ func (a *agent) ReportGaugePost(ctx context.Context, m map[string]float64) {
 		}
 
 		req.Header.Set("Content-Type", "application/json")
+		ip, _, err := net.SplitHostPort(req.RemoteAddr)
+		if err != nil {
+			log.Error().AnErr("SplitHostPort", err).Msg("ReportGaugePost")
+			return
+		} else {
+			req.Header.Set("X-Real-IP", ip)
+		}
 
 		resp, err := a.client.Do(req)
 		if err != nil {
@@ -357,6 +386,13 @@ func (a *agent) ReportBulkPost(ctx context.Context, c map[string]int64, g map[st
 		}
 
 		req.Header.Set("Content-Type", "application/json")
+		ip, _, err := net.SplitHostPort(req.RemoteAddr)
+		if err != nil {
+			log.Error().AnErr("SplitHostPort", err).Msg("ReportBulkPost")
+			return
+		} else {
+			req.Header.Set("X-Real-IP", ip)
+		}
 
 		resp, err := a.client.Do(req)
 		if err != nil {

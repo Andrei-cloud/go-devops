@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"flag"
+	"net"
 
 	"net/http"
 	"time"
@@ -28,11 +29,12 @@ var (
 )
 
 type server struct {
-	r    *chi.Mux
-	s    *http.Server
-	repo repo.Repository
-	f    filestore.Filestore
-	key  []byte
+	r      *chi.Mux
+	s      *http.Server
+	repo   repo.Repository
+	f      filestore.Filestore
+	key    []byte
+	subnet *net.IPNet
 }
 
 func init() {
@@ -46,6 +48,7 @@ func init() {
 	dsnPtr := flag.String("d", "", "database connection string")
 	debugPtr := flag.Bool("debug", false, "sets log level to debug")
 	cryptokeyPtr := flag.String("cyptokey", "", "path to private key file")
+	subnetPtr := flag.String("t", "", "trusted subnet  inCIDR format")
 
 	flag.Parse()
 	cfg = config.ServerConfig{}
@@ -76,9 +79,11 @@ func init() {
 	if cfg.Dsn == "" {
 		cfg.Dsn = *dsnPtr
 	}
-
 	if cfg.CryptoKey == "" {
 		cfg.CryptoKey = *cryptokeyPtr
+	}
+	if cfg.Subnet == "" {
+		cfg.Subnet = *subnetPtr
 	}
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -91,7 +96,11 @@ func init() {
 
 // NewServer - sreates new server instance with all ingected dependencies.
 func NewServer() *server {
-	var encr encrypt.Encrypter
+	var (
+		encr encrypt.Encrypter
+		err  error
+	)
+
 	srv := server{}
 	srv.repo = inmem.New()
 
@@ -117,6 +126,12 @@ func NewServer() *server {
 
 	if cfg.Debug {
 		srv.r = router.WithPPROF(srv.r)
+	}
+
+	_, srv.subnet, err = net.ParseCIDR(cfg.Subnet)
+	if err != nil {
+		log.Error().AnErr("ParseCIDR", err).Msg("NewServer")
+		srv.subnet = nil
 	}
 
 	srv.s = &http.Server{
@@ -164,9 +179,11 @@ func (srv *server) Run(ctx context.Context) {
 
 // Shutdown - blocking function waiting signal to shutdown the server
 // signals to shutdown server:
-//   os.Interrupt
-//   syscall.SIGTERM
-//   syscall.SIGQUIT
+//
+//	os.Interrupt
+//	syscall.SIGTERM
+//	syscall.SIGQUIT
+//
 // Server will be forcefuly stopped after shutdown Timeout.
 func (srv *server) Shutdown(ctx context.Context) {
 	<-ctx.Done()

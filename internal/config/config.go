@@ -32,6 +32,7 @@ type ServerConfig struct {
 	Interval  time.Duration `env:"STORE_INTERVAL"`                   // interval store metrics in persistemnt repository
 	Restore   bool          `env:"RESTORE" envDefault:"true"`        // restore metrics from file upon server start
 	Debug     bool          // debug mode enables additional logging and profile enpoints
+	Subnet    string        `env:"TRUSTED_SUBNET"` // trusted subnet for agent
 }
 
 func ReadConfigFile(path string, c interface{}) {
