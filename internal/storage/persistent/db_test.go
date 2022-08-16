@@ -22,8 +22,8 @@ type DBTestSuite struct {
 
 func (s *DBTestSuite) SetupTest() {
 	var err error
-	s.db, s.mock, err = sqlmock.New()
-	s.repo = &storage{s.db}
+	s.db, s.mock, err = sqlmock.New(sqlmock.MonitorPingsOption(true))
+	s.repo = &Storage{s.db}
 	s.NoError(err)
 }
 
@@ -31,7 +31,17 @@ func (s *DBTestSuite) TearDownTest() {
 	s.repo.Close()
 }
 
+func (s *DBTestSuite) TestCreateTable() {
+	query := "^CREATE TABLE IF NOT EXISTS (.+)"
+
+	s.mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, 1))
+	s.NoError(createTable(context.Background(), s.db))
+}
+
 func (s *DBTestSuite) TestPing() {
+	s.mock.ExpectPing().WillReturnError(fmt.Errorf("DB error"))
+	s.mock.ExpectPing()
+	s.Error(s.repo.Ping())
 	s.NoError(s.repo.Ping())
 }
 

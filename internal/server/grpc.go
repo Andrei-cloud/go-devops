@@ -89,7 +89,7 @@ func (s *MetricsServer) UpdateCounter(ctx context.Context, req *pb.UpdCounterReq
 	valid, err := hash.Validate(lm, s.key)
 	if err != nil {
 		log.Debug().AnErr("Validate", err).Msg("UpdateBulkPost")
-		return nil, status.Errorf(codes.Internal, `Failed to update metric: %s`)
+		return nil, status.Errorf(codes.Internal, `Failed to update metric: %s`, req.Metric.Id)
 	}
 
 	if valid {
@@ -125,7 +125,7 @@ func (s *MetricsServer) UpdateMetrics(ctx context.Context, req *pb.UpdMetricsReq
 		valid, err := hash.Validate(lm, s.key)
 		if err != nil {
 			log.Error().AnErr("Validate", err).Msg("UpdateMetrics")
-			return nil, status.Errorf(codes.FailedPrecondition, `Failed to update metric: %s`)
+			return nil, status.Errorf(codes.FailedPrecondition, `Failed to update metric: %s`, m.Id)
 		}
 
 		if valid {

@@ -12,14 +12,14 @@ import (
 	"github.com/andrei-cloud/go-devops/internal/repo"
 )
 
-type storage struct {
-	db *sql.DB
+type Storage struct {
+	DB *sql.DB
 }
 
-var _ repo.Repository = &storage{}
+var _ repo.Repository = &Storage{}
 
 // NewDB - created new instance of db repository.
-func NewDB(dsn string) *storage {
+func NewDB(dsn string) *Storage {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		log.Error().AnErr("Open", err).Msg("NewDB")
@@ -35,7 +35,7 @@ func NewDB(dsn string) *storage {
 		log.Error().AnErr("createTable", err).Msg("NewDB")
 		return nil
 	}
-	return &storage{db}
+	return &Storage{db}
 }
 
 func createTable(ctx context.Context, db *sql.DB) error {
@@ -53,11 +53,11 @@ func createTable(ctx context.Context, db *sql.DB) error {
 
 // Ping - checks the connection with DB and restabloshes if lost connection
 // returns error on failure.
-func (s *storage) Ping() error {
+func (s *Storage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	if s.db != nil {
-		if err := s.db.PingContext(ctx); err != nil {
+	if s.DB != nil {
+		if err := s.DB.PingContext(ctx); err != nil {
 			return err
 		}
 	}
@@ -66,9 +66,9 @@ func (s *storage) Ping() error {
 
 // UpdateGauge - updates metric of type gauge of name g and value v
 // return error if failed.
-func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
+func (s *Storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 	log.Debug().Str("metric", g).Float64("value", v).Msg("DB UpdateGauge")
-	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, value) values ($1, 'gauge', $2) on conflict (id) do update set value = $2;`, g, v)
+	_, err := s.DB.ExecContext(ctx, `insert into metrics (id, mtype, value) values ($1, 'gauge', $2) on conflict (id) do update set value = $2;`, g, v)
 	if err != nil {
 		return err
 	}
@@ -78,9 +78,9 @@ func (s *storage) UpdateGauge(ctx context.Context, g string, v float64) error {
 
 // UpdateCounter - updates metric of type counter of name c and value v
 // return error if failed.
-func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
+func (s *Storage) UpdateCounter(ctx context.Context, c string, v int64) error {
 	log.Debug().Str("metric", c).Int64("delta", v).Msg("DB UpdateCounter")
-	_, err := s.db.ExecContext(ctx, `insert into metrics (id, mtype, delta) 
+	_, err := s.DB.ExecContext(ctx, `insert into metrics (id, mtype, delta) 
 	values ($1, 'counter', $2)
 	on conflict (id)
 	do
@@ -94,10 +94,10 @@ func (s *storage) UpdateCounter(ctx context.Context, c string, v int64) error {
 
 // GetCounter - gets metric of type counter of name c
 // return error if failed.
-func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
+func (s *Storage) GetCounter(ctx context.Context, c string) (int64, error) {
 	var delta int64
 
-	err := s.db.QueryRowContext(ctx, "SELECT delta FROM metrics WHERE mtype = 'counter' and id = $1", c).Scan(&delta)
+	err := s.DB.QueryRowContext(ctx, "SELECT delta FROM metrics WHERE mtype = 'counter' and id = $1", c).Scan(&delta)
 	if err != nil {
 		return 0, err
 	}
@@ -108,10 +108,10 @@ func (s *storage) GetCounter(ctx context.Context, c string) (int64, error) {
 
 // GetGauge - gets metric of type Gauge of name g
 // return error if failed.
-func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
+func (s *Storage) GetGauge(ctx context.Context, g string) (float64, error) {
 	var value float64
 
-	err := s.db.QueryRowContext(ctx, "SELECT value FROM metrics WHERE mtype = 'gauge' and id = $1", g).Scan(&value)
+	err := s.DB.QueryRowContext(ctx, "SELECT value FROM metrics WHERE mtype = 'gauge' and id = $1", g).Scan(&value)
 	if err != nil {
 		return 0, err
 	}
@@ -122,7 +122,7 @@ func (s *storage) GetGauge(ctx context.Context, g string) (float64, error) {
 
 // GetGaugeAll - return map with all metrics of type gauge
 // reurns error if failed.
-func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
+func (s *Storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 	var (
 		id     string
 		value  float64
@@ -131,7 +131,7 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 	log.Debug().Msg("DB GetGetGaugeAllGauge")
 
 	gauges = make(map[string]float64)
-	rows, err := s.db.QueryContext(ctx, "SELECT id, value FROM metrics WHERE mtype = 'gauge'")
+	rows, err := s.DB.QueryContext(ctx, "SELECT id, value FROM metrics WHERE mtype = 'gauge'")
 	if err != nil {
 		return gauges, err
 	}
@@ -153,7 +153,7 @@ func (s *storage) GetGaugeAll(ctx context.Context) (map[string]float64, error) {
 
 // GetCounterAll - return map with all metrics of type gauge
 // reurns error if failed.
-func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
+func (s *Storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 	var (
 		id       string
 		delta    int64
@@ -163,7 +163,7 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 	log.Debug().Msg("DB GetCounterAll")
 
 	counters = make(map[string]int64)
-	rows, err := s.db.QueryContext(ctx, "SELECT id, delta FROM metrics WHERE mtype = 'counter'")
+	rows, err := s.DB.QueryContext(ctx, "SELECT id, delta FROM metrics WHERE mtype = 'counter'")
 	if err != nil {
 		return counters, err
 	}
@@ -184,7 +184,7 @@ func (s *storage) GetCounterAll(ctx context.Context) (map[string]int64, error) {
 }
 
 // Close - closes connection with DB.
-func (s *storage) Close() error {
+func (s *Storage) Close() error {
 	log.Debug().Msg("DB Close")
-	return s.db.Close()
+	return s.DB.Close()
 }
