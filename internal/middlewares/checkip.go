@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// KeyInject - middleware injects the key for handler for requests hash validation.
+// CheckIP - middleware validates trusted subnet.
 func CheckIP(s *net.IPNet) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

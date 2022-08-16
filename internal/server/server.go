@@ -13,14 +13,20 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/encoding"
+	_ "google.golang.org/grpc/encoding/gzip"
 
 	"github.com/andrei-cloud/go-devops/internal/config"
 	"github.com/andrei-cloud/go-devops/internal/encrypt"
+	"github.com/andrei-cloud/go-devops/internal/interceptors"
 	"github.com/andrei-cloud/go-devops/internal/repo"
 	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/andrei-cloud/go-devops/internal/storage/filestore"
 	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
 	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
+
+	pb "github.com/andrei-cloud/go-devops/internal/proto"
 )
 
 var (
@@ -31,6 +37,8 @@ var (
 type server struct {
 	r      *chi.Mux
 	s      *http.Server
+	g      *grpc.Server
+	gl     net.Listener
 	repo   repo.Repository
 	f      filestore.Filestore
 	key    []byte
@@ -48,7 +56,8 @@ func init() {
 	dsnPtr := flag.String("d", "", "database connection string")
 	debugPtr := flag.Bool("debug", false, "sets log level to debug")
 	cryptokeyPtr := flag.String("cyptokey", "", "path to private key file")
-	subnetPtr := flag.String("t", "", "trusted subnet  inCIDR format")
+	subnetPtr := flag.String("t", "", "trusted subnet in CIDR format")
+	grpcPtr := flag.Bool("grpc", false, "enable grpc communication")
 
 	flag.Parse()
 	cfg = config.ServerConfig{}
@@ -86,6 +95,10 @@ func init() {
 		cfg.Subnet = *subnetPtr
 	}
 
+	if !cfg.Grpc {
+		cfg.Grpc = *grpcPtr
+	}
+
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if *debugPtr {
 		cfg.Debug = true
@@ -97,7 +110,7 @@ func init() {
 // NewServer - sreates new server instance with all ingected dependencies.
 func NewServer() *server {
 	var (
-		encr encrypt.Encrypter
+		decr encrypt.Decrypter
 		err  error
 	)
 
@@ -120,18 +133,19 @@ func NewServer() *server {
 	}
 
 	if cfg.CryptoKey != "" {
-		encr = encrypt.New(cfg.CryptoKey)
-	}
-	srv.r = router.SetupRouter(srv.repo, srv.key, encr)
-
-	if cfg.Debug {
-		srv.r = router.WithPPROF(srv.r)
+		decr = encrypt.New(cfg.CryptoKey)
 	}
 
 	_, srv.subnet, err = net.ParseCIDR(cfg.Subnet)
 	if err != nil {
 		log.Error().AnErr("ParseCIDR", err).Msg("NewServer")
 		srv.subnet = nil
+	}
+
+	srv.r = router.SetupRouter(srv.repo, srv.key, decr)
+
+	if cfg.Debug {
+		srv.r = router.WithPPROF(srv.r)
 	}
 
 	srv.s = &http.Server{
@@ -141,6 +155,19 @@ func NewServer() *server {
 		WriteTimeout:   60 * time.Second,
 		IdleTimeout:    30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
+	}
+
+	if cfg.Grpc {
+		if cfg.CryptoKey != "" {
+			encoding.RegisterCodec(encrypt.Encodec{Dec: decr})
+		}
+		srv.gl, err = net.Listen("tcp", ":9090")
+		if err != nil {
+			log.Fatal().AnErr("Listen", err).Msg("Failed to listen port :9090")
+		}
+
+		srv.g = grpc.NewServer(grpc.ChainUnaryInterceptor(interceptors.CheckIP(srv.subnet)))
+		pb.RegisterMetricsServer(srv.g, NewMetricsServer(srv))
 	}
 
 	return &srv
@@ -172,9 +199,13 @@ func (srv *server) Run(ctx context.Context) {
 		}(ctx)
 	}
 
-	log.Info().Msgf("server listening on: %v", cfg.Address)
+	log.Info().Msgf("HTTP server listening on: %v", cfg.Address)
 	go srv.s.ListenAndServe()
 
+	if cfg.Grpc && srv.gl != nil {
+		log.Info().Msgf("gRPC server listening on: :9090")
+		go srv.g.Serve(srv.gl)
+	}
 }
 
 // Shutdown - blocking function waiting signal to shutdown the server
@@ -191,6 +222,13 @@ func (srv *server) Shutdown(ctx context.Context) {
 	defer cancel()
 	if err := srv.s.Shutdown(ctx); err != nil {
 		log.Error().AnErr("Shutdown", err).Msg("Shutdown")
+	}
+
+	if srv.g != nil {
+		srv.g.GracefulStop()
+		if err := srv.gl.Close(); err != nil {
+			log.Error().AnErr("listener close", err).Msg("Shutdown")
+		}
 	}
 
 	if srv.f != nil && cfg.FilePath != "" {

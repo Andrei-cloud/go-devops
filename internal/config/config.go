@@ -19,6 +19,7 @@ type AgentConfig struct {
 	PollInt   time.Duration `json:"poll_interval" env:"POLL_INTERVAL"`     // interval for metrics polling
 	IsBulk    bool          // flag to send metrics in bulk
 	Debug     bool          // debug flag
+	Grpc      bool          `env:"ENABLE_GRPC"` // enable grpc communication
 }
 
 // Config - type for server configuration.
@@ -33,6 +34,7 @@ type ServerConfig struct {
 	Restore   bool          `env:"RESTORE" envDefault:"true"`        // restore metrics from file upon server start
 	Debug     bool          // debug mode enables additional logging and profile enpoints
 	Subnet    string        `env:"TRUSTED_SUBNET"` // trusted subnet for agent
+	Grpc      bool          `env:"ENABLE_GRPC"`    // enable grpc communication
 }
 
 func ReadConfigFile(path string, c interface{}) {

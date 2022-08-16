@@ -1,3 +1,4 @@
+// Package encrypt provides functions for encryptions payload used for http/grpc requests.
 package encrypt
 
 import (
@@ -12,11 +13,6 @@ import (
 )
 
 type any interface{}
-
-type Encrypter interface {
-	Encrypt(b []byte) ([]byte, error)
-	Decrypt(b []byte) ([]byte, error)
-}
 
 type encrypt struct {
 	key any
