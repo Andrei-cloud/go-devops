@@ -1,0 +1,48 @@
+syntax="proto3";
+
+package metrics;
+
+option go_package = "go-devops/internal/proto";
+
+message Metric {
+    string id = 1; // имя метрики
+    enum MType {
+        UNDEFINED = 0;
+        GAUGE = 1;
+        COUNTER = 2;
+    }
+    MType mtype = 2; // параметр, принимающий значение gauge или counter
+    int64 delta = 3; // значение метрики в случае передачи counter
+    double value = 4; // значение метрики в случае передачи gauge
+    string hash = 5; // значение хеш-функции
+  }
+
+message UpdGaugeRequest{
+    Metric metric = 1;
+  }
+
+message UpdGaugeResponse{
+    string error = 1;
+}
+
+message UpdCounterRequest{
+    Metric metric = 1;
+  }
+
+message UpdCounterResponse{
+    string error = 1;
+}
+
+message UpdMetricsRequest{
+    repeated Metric metrics = 1;
+  }
+
+message UpdMetricsResponse{
+    string error = 1;
+}
+
+service Metrics {
+    rpc UpdateGauge(UpdGaugeRequest) returns (UpdGaugeResponse);
+    rpc UpdateCounter(UpdCounterRequest) returns (UpdCounterResponse);
+    rpc UpdateMetrics(UpdMetricsRequest) returns (UpdMetricsResponse);
+}

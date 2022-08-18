@@ -9,7 +9,7 @@ import (
 )
 
 // CryptoMW - middleware provides decryption of encrypted mesage.
-func CryptoMW(e encrypt.Encrypter) func(http.Handler) http.Handler {
+func CryptoMW(e encrypt.Decrypter) func(http.Handler) http.Handler {
 	var b bytes.Buffer
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

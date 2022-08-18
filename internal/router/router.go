@@ -15,9 +15,10 @@ import (
 )
 
 // SetupRouter -  Function setup chi router for handdlers and required middlewares
-//     repo - take entity implementing Repository interface
-//     key - slice of bytes of key for hash validation.
-func SetupRouter(repo repo.Repository, key []byte, e encrypt.Encrypter) *chi.Mux {
+//
+//	repo - take entity implementing Repository interface
+//	key - slice of bytes of key for hash validation.
+func SetupRouter(repo repo.Repository, key []byte, e encrypt.Decrypter) *chi.Mux {
 	log.Debug().Msg("Setting up the router")
 	r := chi.NewRouter()
 	r.Use(mw.CryptoMW(e), mw.GzipMW, mw.KeyInject(key))
@@ -34,7 +35,8 @@ func SetupRouter(repo repo.Repository, key []byte, e encrypt.Encrypter) *chi.Mux
 }
 
 // WithPPROF - Function to setup router for PPROF handlers
-//    r tange chu router to enrach with pprof handlers.
+//
+//	r tange chu router to enrach with pprof handlers.
 func WithPPROF(r *chi.Mux) *chi.Mux {
 	r.Handle("/debug/pprof", http.HandlerFunc(pprof.Index))
 	r.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))

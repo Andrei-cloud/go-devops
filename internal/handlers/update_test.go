@@ -1,16 +1,19 @@
 package handlers_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/andrei-cloud/go-devops/internal/router"
 	"github.com/andrei-cloud/go-devops/internal/storage/inmem"
+	"github.com/andrei-cloud/go-devops/internal/storage/persistent"
 )
 
 func TestUpdate(t *testing.T) {
@@ -221,7 +224,7 @@ func TestUpdateBulkPost(t *testing.T) {
 			name:        "test 3",
 			method:      http.MethodPost,
 			contentType: "application/json",
-			metrics:     `[{"id":"Alloc","type":"gauge","value":1.45}]`,
+			metrics:     `[{"id":"Alloc","type":"gauge","value":1.46}]`,
 			want:        http.StatusOK,
 		},
 		{
@@ -252,9 +255,35 @@ func TestUpdateBulkPost(t *testing.T) {
 			metrics:     `[{"id":"PollCount","type":"counter","delta":345}]`,
 			want:        http.StatusOK,
 		},
+		{
+			name:        "test 8",
+			method:      http.MethodPost,
+			contentType: "application/json",
+			metrics:     `[{"id":"PollCount","type":"counter","delta":000}]`,
+			want:        http.StatusInternalServerError,
+		},
+		{
+			name:        "test 9",
+			method:      http.MethodPost,
+			contentType: "application/json",
+			metrics:     `[{"id":"Test","type":"gauge","value":0.01}]`,
+			want:        http.StatusInternalServerError,
+		},
 	}
 
-	r := router.SetupRouter(inmem.New(), []byte{}, nil)
+	mockdb, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockdb.Close()
+
+	query := `^insert into metrics(.+)`
+
+	mock.ExpectExec(query).WithArgs("Alloc", 1.45).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(query).WithArgs("Alloc", 1.46).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(query).WithArgs("PollCount", 345).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(query).WithArgs("PollCount", 000).WillReturnError(fmt.Errorf("DB error"))
+	mock.ExpectExec(query).WithArgs("Test", 0.01).WillReturnError(fmt.Errorf("DB error"))
+
+	r := router.SetupRouter(&persistent.Storage{DB: mockdb}, []byte{}, nil)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
